@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 
 namespace TelegramConvertorBots.Models
 {
+    // модель данных настроек бота
     public class BotConfig
     {
         public string BotToken { get; set; } = string.Empty;
