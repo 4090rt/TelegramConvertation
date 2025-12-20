@@ -46,8 +46,9 @@ namespace TelegramConvertorBots
             ConfigureAppConfiguration((context, config) => // Создаем хост с аргументами командной строки
             {
                 // настройка конфигурации
-                config.SetBasePath(Directory.GetCurrentDirectory());// базовая папка
-                config.AddJsonFile("jsconfig1.json", optional: false, reloadOnChange: true);// берем файл json
+                //config.SetBasePath(Directory.GetCurrentDirectory());// базовая папка
+                //config.AddJsonFile("jsconfig1.json", optional: false, reloadOnChange: true);// берем файл json если нет falseoptional: false
+                //reloadOnChange: если измнаенился во время работы - перезапускаем конфигурацию
 
                 // добавление переменных окружения
                 config.AddEnvironmentVariables();
@@ -61,11 +62,10 @@ namespace TelegramConvertorBots
             })
             .ConfigureServices((context,services) =>
             {
-                //Регистрируем BotConfig в IOptions<BotConfig>
+                // тут мы с помощью Configuration.GetSElection выбираем информацию о боте из Json файла и передаем
+                // в модель данных BotConfig, для дальнейшего использования в коде
                 services.Configure<BotConfig>(
                     context.Configuration.GetSection("TelegramBot"));
-                // 📌 Это связывает секцию "TelegramBot" из JSON с классом BotConfig
-                // Позволяет использовать IOptions<BotConfig> в конструкторах
 
                 //Регистрируем бота как синглтон
                 services.AddSingleton<ITelegramBotClient>(sp =>
@@ -76,7 +76,8 @@ namespace TelegramConvertorBots
 
                 // Регистрируем обработчик команд
                 services.AddSingleton<CommandHandler.CommandHandlerr>();
-                //Регистрируем фоновую службу
+                //Регистрируем фоновую службу, AddHostedService добавляем  - он служит как связь между тг апи и ботом
+                // и передает команды из тг в Main класс где обрабатываются файлы и команды
                 services.AddHostedService<TelegramBotService>();
 
                // Регистрируем словарь для сессий пользователей
