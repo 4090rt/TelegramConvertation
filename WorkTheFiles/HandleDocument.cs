@@ -13,7 +13,6 @@ namespace TelegramConvertorBots.WorkTheFiles
 {
     public class HandleDocument
     {
-       private readonly Document _documents;
         public readonly Microsoft.Extensions.Logging.ILogger _logger;
         private readonly ITelegramBotClient _botclient;
 
@@ -22,21 +21,21 @@ namespace TelegramConvertorBots.WorkTheFiles
             _botclient = botClient;
             _logger = logger;
         }
-       public async Task HandleDocumentAsyncmethod(Telegram.Bot.Types.Message message, string format, long chatId, CancellationToken cancellationToken)
+       public async Task HandleDocumentAsyncmethod(Document documant, Telegram.Bot.Types.Message message, string format, long chatId, CancellationToken cancellationToken)
        {
-            if (message.Document != null)
+            if (documant != null)
             {
                 try
                 {
-                    var filename = _documents.FileName ?? "Без названия"; ;
-                    var filesize = _documents.FileSize / 1024.0 / 1024.0;
-                    var type = _documents.MimeType ?? "Неизвестный тип";
+                    var filename = documant.FileName ?? "Без названия"; ;
+                    var filesize = documant.FileSize / 1024.0 / 1024.0;
+                    var type = documant.MimeType ?? "Неизвестный тип";
 
 
                     _logger.LogInformation($"Получен файл:{filename} Размер: {filesize} Тип: {type}");
 
                     DocumentDowloaded documentDowloaded = new DocumentDowloaded(_botclient);
-                    await documentDowloaded.DocumentDowloadedAsync(_documents, cancellationToken, chatId);
+                    await documentDowloaded.DocumentDowloadedAsync(format, documant, cancellationToken, chatId, _logger);
                 }
                 catch (Exception ex)
                 {
