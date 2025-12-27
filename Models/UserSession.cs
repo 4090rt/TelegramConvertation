@@ -7,7 +7,6 @@ using Telegram.Bot.Types;
 
 namespace TelegramConvertorBots.Models
 {
-    // модель данных пользовательской сессии
     public class UserSession
     {
         public long ChatId { get; set; }
@@ -15,11 +14,12 @@ namespace TelegramConvertorBots.Models
         public string CurrentFilePath { get; set; }
         public string CurrentFilaName { get; set; }
         public string CurrentFormat { get; set; }
+        public string Email{ get; set; }
         public DateTime ConvertationTime { get; set; } = DateTime.UtcNow;
         public DateTime LastActivity { get; set; } = DateTime.UtcNow;
 
     }
-    // перечень состояний пользователя
+
     public enum UserState
     {
         Idle,                 // Ничего не делает
@@ -28,7 +28,7 @@ namespace TelegramConvertorBots.Models
         Processing,           // В процессе конвертации
         WaitingForUrl         // Ждет URL от пользователя
     }
-    // модель данных результатов конвертации
+
     public class Convertresults
     { 
         public long ChatID { get; set; }
