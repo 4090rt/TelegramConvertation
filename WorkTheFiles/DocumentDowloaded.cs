@@ -2,6 +2,7 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Pipes;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -9,16 +10,18 @@ using System.Threading.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using TelegramConvertorBots.HandleDOcumentAsync;
+using TelegramConvertorBots.Models;
 
 namespace TelegramConvertorBots.WorkTheFiles
 {
     public class DocumentDowloaded
     {
         private readonly ITelegramBotClient _botclient;
-
-        public DocumentDowloaded(ITelegramBotClient botClient)
+        private readonly Dictionary<long, Models.UserSession> _userSession;
+        public DocumentDowloaded(ITelegramBotClient botClient, Dictionary<long, Models.UserSession> userSession)
         { 
             _botclient = botClient;
+            _userSession = userSession;
         }
 
         public async Task DocumentDowloadedAsync(string format, Document documents, CancellationToken canceltoken, long chatid, ILogger logger)
@@ -27,7 +30,7 @@ namespace TelegramConvertorBots.WorkTheFiles
             var fileInfo = await _botclient.GetFileAsync(documents.FileId, canceltoken);
             var filename = documents.FileName ?? "Без названия"; ;
             var filesize = documents.FileSize / 1024.0 / 1024.0;
-
+            var session = _userSession[chatid];
 
             await _botclient.SendTextMessageAsync(
                 chatId: chatid,
@@ -77,7 +80,14 @@ namespace TelegramConvertorBots.WorkTheFiles
                     );
                     return;
                 }
-                SendDocument senddocumentpdf_word = new SendDocument(_botclient, logger);
+                if (session.Email != null)
+                {
+                    SendEmail.Send senn = new SendEmail.Send();
+                    await senn.SmptServerSend(session.Email, converteredfilePDF_WORD);
+                }
+                await Task.Delay(300);
+
+                SendDocument senddocumentpdf_word = new SendDocument(_botclient, logger,_userSession);
                 await senddocumentpdf_word.SendDocumentToChatAsync(chatid, converteredfilePDF_WORD, canceltoken);
 
                 TryDeleteFile(filePath);
@@ -97,7 +107,14 @@ namespace TelegramConvertorBots.WorkTheFiles
                     );
                     return;
                 }
-                SendDocument senddocumenttxt_word = new SendDocument(_botclient, logger);
+                if (session.Email != null)
+                {
+                    SendEmail.Send senn = new SendEmail.Send();
+                    await senn.SmptServerSend(session.Email, converteredTXT_Word);
+                }
+                await Task.Delay(300);
+
+                SendDocument senddocumenttxt_word = new SendDocument(_botclient, logger, _userSession);
                 await senddocumenttxt_word.SendDocumentToChatAsync(chatid, converteredTXT_Word, canceltoken);
 
 

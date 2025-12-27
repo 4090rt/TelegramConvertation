@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using TelegramConvertorBots.Models;
 
 namespace TelegramConvertorBots.WorkTheFiles
 {
@@ -15,11 +16,12 @@ namespace TelegramConvertorBots.WorkTheFiles
     {
         public readonly Microsoft.Extensions.Logging.ILogger _logger;
         private readonly ITelegramBotClient _botclient;
-
-        public HandleDocument(ITelegramBotClient botClient, Microsoft.Extensions.Logging.ILogger logger)
+        private readonly Dictionary<long, Models.UserSession> _userSession;
+        public HandleDocument(ITelegramBotClient botClient, Microsoft.Extensions.Logging.ILogger logger, Dictionary<long, Models.UserSession> userSession)
         { 
             _botclient = botClient;
             _logger = logger;
+            _userSession = userSession;
         }
        public async Task HandleDocumentAsyncmethod(Document documant, Telegram.Bot.Types.Message message, string format, long chatId, CancellationToken cancellationToken)
        {
@@ -34,7 +36,7 @@ namespace TelegramConvertorBots.WorkTheFiles
 
                     _logger.LogInformation($"Получен файл:{filename} Размер: {filesize} Тип: {type}");
 
-                    DocumentDowloaded documentDowloaded = new DocumentDowloaded(_botclient);
+                    DocumentDowloaded documentDowloaded = new DocumentDowloaded(_botclient, _userSession);
                     await documentDowloaded.DocumentDowloadedAsync(format, documant, cancellationToken, chatId, _logger);
                 }
                 catch (Exception ex)

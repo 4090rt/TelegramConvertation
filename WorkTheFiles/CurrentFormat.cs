@@ -1,10 +1,13 @@
-﻿using System;
+﻿using Microsoft.Extensions.Logging;
+using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Telegram.Bot;
+using Telegram.Bot.Types;
 using TelegramConvertorBots.Models;
 
 namespace TelegramConvertorBots.WorkTheFiles
@@ -14,51 +17,50 @@ namespace TelegramConvertorBots.WorkTheFiles
         private readonly ITelegramBotClient _botClient;
         private readonly Telegram.Bot.Types.Message _message;
         public readonly Microsoft.Extensions.Logging.ILogger _logger;
-        public CurrentFormat(ITelegramBotClient botClient)
+        private readonly Dictionary<long, Models.UserSession> _userSession;
+        public CurrentFormat(ITelegramBotClient botClient, ILogger logger, Dictionary<long, Models.UserSession> userSession)
         { 
             _botClient = botClient;
+            _userSession = userSession;
+            _logger = logger;
         }
 
-        public async Task ProcessFormatSelectionAsync(long chatId, CancellationToken cancellationToken,UserSession session)
+        public async Task ProcessFormatSelectionAsync(long chatId, CancellationToken cancellationToken,UserSession session, Document document)
         {
-           
-            string format = _message.Text;
-            format = format.ToLower().Trim();
-            if (format.StartsWith("."))
+            if (document != null && !string.IsNullOrEmpty(document.FileName))
             {
-                format = format.Substring(1);
-            }
+                string filename = document.FileName;
+                string exttation = Path.GetExtension(filename);
 
-            var supportsformat = new[] { "docx", "txt", "pdf", "html" };
-            if (!supportsformat.Contains(format))
-            {
+                string format = Path.GetExtension(filename).Trim('.') ?? "";
+                format = format.ToLower();
+
+                var supportsformat = new[] { "docx", "txt", "pdf", "html" };
+                if (!supportsformat.Contains(format))
+                {
+                    await _botClient.SendTextMessageAsync(
+                       chatId: chatId,
+                       text: $"❌ Формат '{format}' не поддерживается.\n\n" +
+                            "Доступные форматы: docx, pdf, jpg, png, txt\n\n" +
+                            "Введите формат еще раз:",
+                       cancellationToken: cancellationToken);
+                    return;
+                }
+                session.CurrentFormat = format;
+                session.state = UserState.Processing;
+
                 await _botClient.SendTextMessageAsync(
-                   chatId: chatId,
-                   text: $"❌ Формат '{format}' не поддерживается.\n\n" +
-                        "Доступные форматы: docx, pdf, jpg, png, txt\n\n" +
-                        "Введите формат еще раз:",
-                   cancellationToken: cancellationToken);
-                return;
+                     chatId: chatId,
+                     text: $"🔄 Начинаю конвертацию файла {filename}, формата {format.ToUpper()}...\n\n" +
+                          "Это может занять некоторое время.",
+                     cancellationToken: cancellationToken);
+
+
+                HandleDocument documents = new HandleDocument(_botClient, _logger, _userSession);
+                await documents.HandleDocumentAsyncmethod(document, _message, format, chatId, cancellationToken);
+                _logger.LogInformation($"передан документ {filename}");
+                session.state = UserState.Idle;
             }
-            session.CurrentFormat = format;
-            session.state = UserState.Processing;
-
-            await _botClient.SendTextMessageAsync(
-                 chatId: chatId,
-                 text: $"🔄 Начинаю конвертацию в {format.ToUpper()}...\n\n" +
-                      "Это может занять некоторое время.",
-                 cancellationToken: cancellationToken);
-            HandleDocument document = new HandleDocument(_botClient, _logger);
-            await document.HandleDocumentAsyncmethod(_message, format, chatId, cancellationToken);
-
-            session.state = UserState.Idle;
-
-            await _botClient.SendTextMessageAsync(
-                chatId: chatId,
-                text: $"✅ Конвертация завершена!\n\n" +
-                     "В реальной версии здесь будет файл для скачивания.\n" +
-                     "Пока это демо-версия.",
-                cancellationToken: cancellationToken);
         }
     }
 }
