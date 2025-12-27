@@ -60,7 +60,10 @@ namespace TelegramConvertorBots.Commands
                     CancelCurrentOperation cancel = new CancelCurrentOperation(_botClient);
                     await cancel.CancelCurrentOperationAsync(chatId, cancellationToken);
                     break;
-
+                case "/sendmail":
+                    SendMail send = new SendMail(_botClient);
+                    await send.SendMails(chatId, cancellationToken);
+                    break;
 
                 default:
                     await _botClient.SendTextMessageAsync(
