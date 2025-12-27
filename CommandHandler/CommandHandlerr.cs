@@ -7,6 +7,7 @@ using System.IO.Pipes;
 using System.Linq;
 using System.Security.Policy;
 using System.Text;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -61,12 +62,11 @@ namespace TelegramConvertorBots.CommandHandler
             _cancelCurrentOperation = new CancelCurrentOperation(botClient);
             _mainComands = new MainComands(botClient, _botConfig, _logger);
 
-            _convertStart = new ConvertStart(botClient);
-            _currentFormat = new CurrentFormat(botClient);
-            _handleDocument = new HandleDocument(botClient, _logger);
-            _documentDowloaded = new DocumentDowloaded(botClient);
+            _currentFormat = new CurrentFormat(botClient, _logger, _userSession);
+            _handleDocument = new HandleDocument(botClient, _logger, _userSession);
+            _documentDowloaded = new DocumentDowloaded(botClient, _userSession);
         }
-        public async Task HandlerMessageAsync( Telegram.Bot.Types.Message message, CancellationToken cancellationToken)
+        public async Task HandlerMessageAsync(Telegram.Bot.Types.Message message, CancellationToken cancellationToken)
         {
             var chatId = message.Chat.Id;
             var userId = message.From?.Id ?? 0;
@@ -74,46 +74,93 @@ namespace TelegramConvertorBots.CommandHandler
 
             _logger.LogInformation($"Сообщение от @{username} (ID: {userId}) в чате {chatId}");
 
+            if (!_userSession.ContainsKey(chatId))
+            {
+                _userSession[chatId] = new Models.UserSession { ChatId = chatId };
+            }
+
+            var session = _userSession[chatId];
+            session.LastActivity = DateTime.UtcNow;
+
+
             if (!string.IsNullOrEmpty(message.Text))
             {
-                await HandleTextMessageAsync(message, chatId,  cancellationToken);
+                await HandleTextMessageAsync(message, chatId, cancellationToken);
                 return;
             }
 
+
             if (message.Document != null)
             {
-                ConvertStart convertStart = new ConvertStart(_botClient);
+                session.state = Models.UserState.WaitingForFile;
+
+
+                string emailToUse = !string.IsNullOrEmpty(session.Email) ? session.Email : "";
+
+                ConvertStart convertStart = new ConvertStart(_botClient, _userSession, message.Document, _logger);
                 await convertStart.HadleUserInputAsync(chatId, cancellationToken);
+
+
+                session.Email = null;
+                return;
             }
 
             await _botClient.SendTextMessageAsync(
                 chatId: chatId,
-                text: "Отправьте файл или используйте команды./help - список команд",
+                text: "Отправьте файл или используйте команды. /help - список команд",
                 cancellationToken: cancellationToken
             );
         }
 
-        private async Task HandleTextMessageAsync(Telegram.Bot.Types.Message message, long chatId,CancellationToken cancellationToken)
+        private async Task HandleTextMessageAsync(Telegram.Bot.Types.Message message, long chatId, CancellationToken cancellationToken)
         {
-            string text = message.Text;
-            // Проверяем, является ли текст командой
-            char a = '/';
-            if (text.StartsWith(a.ToString()))
+            string text = message.Text.Trim();
+            var session = _userSession[chatId];
+
+
+            if (text.StartsWith("/"))
             {
-                MainComands mainmethid = new MainComands(_botClient,_botConfig,_logger);
+                MainComands mainmethid = new MainComands(_botClient, _botConfig, _logger);
                 await mainmethid.HandleComandAsync(chatId, text.ToLower(), cancellationToken);
+                return;
             }
-            else
+
+
+            if (text.Contains("@"))
             {
-                ConvertStart convertStart = new ConvertStart(_botClient);
-                await convertStart.HadleUserInputAsync(chatId, cancellationToken);
+
+                session.Email = text;
+                session.state = Models.UserState.WaitingForFile;
+
+                await _botClient.SendTextMessageAsync(
+                    chatId: chatId,
+                    text: $"✅ Email сохранен: {text}\n📤 Теперь отправьте файл для конвертации и отправки на почту.",
+                    cancellationToken: cancellationToken);
+                return;
             }
+
+
+            await _botClient.SendTextMessageAsync(
+                chatId: chatId,
+                text: "📤 Отправьте файл для конвертации.\n📧 Или отправьте email (например: user@mail.com) для получения файла на почту.",
+                cancellationToken: cancellationToken);
         }
 
-        public Task HandleCallbackQueryAsync(CallbackQuery callbackQuery, CancellationToken cancellationToken)
+        public async Task HandleCallbackQueryAsync(CallbackQuery callbackQuery, CancellationToken cancellationToken)
         {
-            // Заглушка для обработки callback-запросов
-            return Task.CompletedTask;
+            var chatId = callbackQuery.Message.Chat.Id;
+            var callbackData = callbackQuery.Data;
+
+            switch (callbackData)
+            {
+                case "/sendmail":
+                    StartSendCinvertation convert = new StartSendCinvertation(_botClient);
+                    await convert.StartConversionSessionAsyncc(chatId, cancellationToken);
+                    await _botClient.AnswerCallbackQueryAsync(
+                    callbackQueryId: callbackQuery.Id,
+                    cancellationToken: cancellationToken);
+                    break;
+            }
         }
     }
 }
