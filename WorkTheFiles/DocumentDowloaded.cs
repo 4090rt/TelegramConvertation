@@ -18,10 +18,12 @@ namespace TelegramConvertorBots.WorkTheFiles
     {
         private readonly ITelegramBotClient _botclient;
         private readonly Dictionary<long, Models.UserSession> _userSession;
-        public DocumentDowloaded(ITelegramBotClient botClient, Dictionary<long, Models.UserSession> userSession)
+        public readonly Microsoft.Extensions.Logging.ILogger _logger;
+        public DocumentDowloaded(ITelegramBotClient botClient, Dictionary<long, Models.UserSession> userSession, Microsoft.Extensions.Logging.ILogger logger)
         { 
             _botclient = botClient;
             _userSession = userSession;
+            _logger = logger;
         }
 
         public async Task DocumentDowloadedAsync(string format, Document documents, CancellationToken canceltoken, long chatid, ILogger logger)
@@ -66,63 +68,14 @@ namespace TelegramConvertorBots.WorkTheFiles
                      cancellationToken: canceltoken
                  );
 
-            string formalower = format.ToLower();
-            if (formalower == "pdf")
-            {
-                PDF_WordConvert convert = new PDF_WordConvert();
-                var converteredfilePDF_WORD = await convert.PDFConvertToWord(filePath);
-                if (converteredfilePDF_WORD == "Ошибка конертации" || converteredfilePDF_WORD == "Файл слишком большой для конвертации")
-                {
-                    await _botclient.SendTextMessageAsync(
-                        chatId: chatid,
-                        text: $"❌ {converteredfilePDF_WORD}",
-                        cancellationToken: canceltoken
-                    );
-                    return;
-                }
-                if (session.Email != null)
-                {
-                    SendEmail.Send senn = new SendEmail.Send();
-                    await senn.SmptServerSend(session.Email, converteredfilePDF_WORD);
-                }
-                await Task.Delay(300);
-
-                SendDocument senddocumentpdf_word = new SendDocument(_botclient, logger,_userSession);
-                await senddocumentpdf_word.SendDocumentToChatAsync(chatid, converteredfilePDF_WORD, canceltoken);
+            SimpleFactory factory = new SimpleFactory(_botclient, _userSession, _logger);
+            Formats formats = factory.createProduct(format,chatid,filePath,canceltoken);
+            await formats.CurrentFormats(format, chatid, filePath, canceltoken);
 
                 TryDeleteFile(filePath);
-                TryDeleteFile(converteredfilePDF_WORD);
-            }
-
-            if (formalower == "txt")
-            {
-                TXT_WordConvert convert = new TXT_WordConvert();
-                var converteredTXT_Word = await convert.TXTConverttoWord(filePath);
-                if (converteredTXT_Word == "Ошибка конертации" || converteredTXT_Word == "Файл слишком большой для конвертации")
-                {
-                    await _botclient.SendTextMessageAsync(
-                        chatId: chatid,
-                        text: $"❌ {converteredTXT_Word}",
-                        cancellationToken: canceltoken
-                    );
-                    return;
-                }
-                if (session.Email != null)
-                {
-                    SendEmail.Send senn = new SendEmail.Send();
-                    await senn.SmptServerSend(session.Email, converteredTXT_Word);
-                }
-                await Task.Delay(300);
-
-                SendDocument senddocumenttxt_word = new SendDocument(_botclient, logger, _userSession);
-                await senddocumenttxt_word.SendDocumentToChatAsync(chatid, converteredTXT_Word, canceltoken);
-
-
-                TryDeleteFile(filePath);
-                TryDeleteFile(converteredTXT_Word);
-            }
+            
         }
-        private void TryDeleteFile(string filePath)
+        public void TryDeleteFile(string filePath)
         {
             // Несколько попыток удаления с задержкой
             for (int i = 0; i < 3; i++)
