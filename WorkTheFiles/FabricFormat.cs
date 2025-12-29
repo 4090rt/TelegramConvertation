@@ -10,6 +10,7 @@ using Telegram.Bot;
 using Telegram.Bot.Types;
 using TelegramConvertorBots.HandleDOcumentAsync;
 using TelegramConvertorBots.Models;
+using TelegramConvertorBots.SendEmail;
 
 namespace TelegramConvertorBots.WorkTheFiles
 {
@@ -17,6 +18,61 @@ namespace TelegramConvertorBots.WorkTheFiles
         {
              Task CurrentFormats(string formalower, long ChatId, string Filepath, CancellationToken cancellation);        
         }
+
+    public class PDFtoText : Formats
+    {
+        public readonly ITelegramBotClient _botclient;
+        public readonly Dictionary<long, Models.UserSession> _userSession;
+        public readonly Microsoft.Extensions.Logging.ILogger _logger;
+
+        public PDFtoText(ITelegramBotClient botClient,
+          Dictionary<long, Models.UserSession> userSession,
+           Microsoft.Extensions.Logging.ILogger logger)
+        {
+            _botclient = botClient;
+            _userSession = userSession;
+            _logger = logger;
+        }
+
+        public async Task CurrentFormats(string formalower, long ChatId, string Filepath, CancellationToken cancellation)
+        {
+            try
+            {
+                if (formalower == "pdf")
+                {
+                    var session = _userSession[ChatId];
+                    PDF_TXTConvert convert = new PDF_TXTConvert();
+                    var converteredfilePDF_Text = await convert.PDFReaderForTXT(Filepath);
+
+                    if (converteredfilePDF_Text == "Ошибка конертации" || converteredfilePDF_Text == "Файл слишком большой для конвертации")
+                    {
+                        await _botclient.SendTextMessageAsync(
+                                   chatId: ChatId,
+                                   text: $"❌ {converteredfilePDF_Text}",
+                                   cancellationToken: cancellation
+                               );
+                        return;
+                    }
+                    if (session.Email != null)
+                    {
+                        Send send = new Send();
+                        await send.SmptServerSend(session.Email, converteredfilePDF_Text);
+                    }
+                    await Task.Delay(300);
+
+                    SendDocument sendcoumentpdftxt = new SendDocument(_botclient, _logger, _userSession);
+                    await sendcoumentpdftxt.SendDocumentToChatAsync(ChatId,Filepath,cancellation);
+
+                    DocumentDowloaded doc = new DocumentDowloaded(_botclient,_userSession,_logger);
+                     doc.TryDeleteFile(converteredfilePDF_Text);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Не удалось получить конвертировать из pdf в txt" + ex.Message);
+            }
+        }
+    }
 
 
         public class PDFtoWord : Formats
@@ -154,8 +210,9 @@ namespace TelegramConvertorBots.WorkTheFiles
             {
                 switch (formalower.ToLower())
                 {
-                    case "pdf": return new PDFtoWord(_botclient, _userSession, _logger);
+                    //case "pdf": return new PDFtoWord(_botclient, _userSession, _logger);
                     case "txt": return new TEXTtoWord(_botclient, _userSession, _logger);
+                    case "pdf": return new PDFtoText(_botclient, _userSession, _logger);
                     default: return new Default();
                 }           
             }
