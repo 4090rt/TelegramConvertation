@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using iText.Forms.Form.Element;
+using Microsoft.Extensions.Logging;
 using NLog;
 using System;
 using System.Collections.Generic;
@@ -10,6 +11,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using Telegram.Bot.Types.InputFiles;
 using TelegramConvertorBots.Models;
 
 namespace TelegramConvertorBots.WorkTheFiles
@@ -30,29 +32,63 @@ namespace TelegramConvertorBots.WorkTheFiles
 
         public async Task SendDocumentToChatAsync(long chatId, string filePath, CancellationToken cancellationToken)
         {
-            using (var filestream = System.IO.File.OpenRead(filePath))
+            try
             {
-                var session = _userSession[chatId];
-   
-                var filename = System.IO.Path.GetFileName(filePath);
-                if (session.Email != null)
+                if (!System.IO.File.Exists(filePath))
                 {
-                    await _botClient.SendDocumentAsync(
+                    _logger?.LogError($"Файл не найден: {filePath}");
+                    await _botClient.SendTextMessageAsync(
+                        chatId: chatId,
+                        text: "❌ Ошибка: файл не найден",
+                        cancellationToken: cancellationToken
+                    );
+                    return;
+                }
+                var filename = Path.GetFileName(filePath);
+                _logger?.LogInformation($"Отправка файла: {filename} в чат {chatId}");
+
+                using (var filestream = System.IO.File.OpenRead(filePath))
+                {
+                    var session = _userSession[chatId];
+                    var inputFile = new Telegram.Bot.Types.InputFiles.InputOnlineFile(filestream, filename);
+
+                    if (session.Email != null)
+                    {
+                        await _botClient.SendDocumentAsync(
+                        chatId: chatId,
+                        document: inputFile,
+                        caption: $"✅ Успешно! Ваш конвертированный файл, также файл отправлен на почту {session.Email}",
+                        cancellationToken: cancellationToken
+                    );
+                    }
+                    else
+                    {
+                        await _botClient.SendDocumentAsync(
+                        chatId: chatId,
+                        document: inputFile,
+                        caption: "✅ Успешно! Ваш конвертированный файл, почта для отправки не указана",
+                        cancellationToken: cancellationToken
+                    );
+                    }
+                }
+            }
+            catch (FileNotFoundException ex)
+            {
+                _logger?.LogError(ex, $"Файл не найден: {filePath}");
+                await _botClient.SendTextMessageAsync(
                     chatId: chatId,
-                    document: filestream,
-                    caption: $"✅ Успешно! Ваш конвертированный файл, также файл отправлен на почту {session.Email}",
+                    text: "❌ Файл не найден после конвертации",
                     cancellationToken: cancellationToken
                 );
-                }
-                else
-                {
-                    await _botClient.SendDocumentAsync(
+            }
+            catch (Exception ex)
+            {
+                _logger?.LogError(ex, $"Ошибка отправки файла {filePath}");
+                await _botClient.SendTextMessageAsync(
                     chatId: chatId,
-                    document: filestream,
-                    caption: "✅ Успешно! Ваш конвертированный файл, почта для отправки не указана",
+                    text: $"❌ Ошибка отправки файла: {ex.Message}",
                     cancellationToken: cancellationToken
                 );
-                }
             }
         }
     }

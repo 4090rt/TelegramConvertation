@@ -19,60 +19,60 @@ namespace TelegramConvertorBots.WorkTheFiles
              Task CurrentFormats(string formalower, long ChatId, string Filepath, CancellationToken cancellation);        
         }
 
-    public class PDFtoText : Formats
-    {
-        public readonly ITelegramBotClient _botclient;
-        public readonly Dictionary<long, Models.UserSession> _userSession;
-        public readonly Microsoft.Extensions.Logging.ILogger _logger;
-
-        public PDFtoText(ITelegramBotClient botClient,
-          Dictionary<long, Models.UserSession> userSession,
-           Microsoft.Extensions.Logging.ILogger logger)
+        public class WORDtoPDF : Formats
         {
-            _botclient = botClient;
-            _userSession = userSession;
-            _logger = logger;
-        }
+            public readonly ITelegramBotClient _botclient;
+            public readonly Dictionary<long, Models.UserSession> _userSession;
+            public readonly Microsoft.Extensions.Logging.ILogger _logger;
 
-        public async Task CurrentFormats(string formalower, long ChatId, string Filepath, CancellationToken cancellation)
-        {
-            try
+            public WORDtoPDF(ITelegramBotClient botClient,
+                    Dictionary<long, Models.UserSession> userSession,
+                     Microsoft.Extensions.Logging.ILogger logger)
             {
-                if (formalower == "pdf")
+                _botclient = botClient;
+                _userSession = userSession;
+                _logger = logger;
+            }
+
+            public async Task CurrentFormats(string formalower, long ChatId, string Filepath, CancellationToken cancellation)
+            {
+                try
                 {
-                    var session = _userSession[ChatId];
-                    PDF_TXTConvert convert = new PDF_TXTConvert();
-                    var converteredfilePDF_Text = await convert.PDFReaderForTXT(Filepath);
-
-                    if (converteredfilePDF_Text == "Ошибка конертации" || converteredfilePDF_Text == "Файл слишком большой для конвертации")
+                    if (formalower == "doc" || formalower == "docx")
                     {
-                        await _botclient.SendTextMessageAsync(
-                                   chatId: ChatId,
-                                   text: $"❌ {converteredfilePDF_Text}",
-                                   cancellationToken: cancellation
-                               );
-                        return;
-                    }
-                    if (session.Email != null)
-                    {
-                        Send send = new Send();
-                        await send.SmptServerSend(session.Email, converteredfilePDF_Text);
-                    }
-                    await Task.Delay(300);
+                        var session = _userSession[ChatId];
+                        WORDToPDF wordpdf = new WORDToPDF();
+                        var converteredfileword_pdf = await wordpdf.DOCXConverttoPDF(Filepath);
+                        if (converteredfileword_pdf == "Ошибка конертации" || converteredfileword_pdf == "Файл слишком большой для конвертации")
+                        {
+                            await _botclient.SendTextMessageAsync(
+                                chatId: ChatId,
+                                text: $"❌ {converteredfileword_pdf}",
+                                cancellationToken: cancellation
+                            );
+                            return;
+                        }
+                        if (session.Email != null)
+                        {
+                            SendEmail.Send senn = new SendEmail.Send();
+                            await senn.SmptServerSend(session.Email, converteredfileword_pdf);
+                        }
+                        await Task.Delay(300);
 
-                    SendDocument sendcoumentpdftxt = new SendDocument(_botclient, _logger, _userSession);
-                    await sendcoumentpdftxt.SendDocumentToChatAsync(ChatId,Filepath,cancellation);
+                        SendDocument senddocumentpdf_word = new SendDocument(_botclient, _logger, _userSession);
+                        await senddocumentpdf_word.SendDocumentToChatAsync(ChatId, converteredfileword_pdf, cancellation);
 
-                    DocumentDowloaded doc = new DocumentDowloaded(_botclient,_userSession,_logger);
-                     doc.TryDeleteFile(converteredfilePDF_Text);
+                        DocumentDowloaded doc = new DocumentDowloaded(_botclient, _userSession, _logger);
+                        doc.TryDeleteFile(converteredfileword_pdf);
+
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _logger.LogError("Не удалось получить конвертировать из pdf в word" + ex.Message);
                 }
             }
-            catch (Exception ex)
-            {
-                _logger.LogError("Не удалось получить конвертировать из pdf в txt" + ex.Message);
-            }
         }
-    }
 
 
         public class PDFtoWord : Formats
@@ -210,11 +210,12 @@ namespace TelegramConvertorBots.WorkTheFiles
             {
                 switch (formalower.ToLower())
                 {
-                    //case "pdf": return new PDFtoWord(_botclient, _userSession, _logger);
-                    case "txt": return new TEXTtoWord(_botclient, _userSession, _logger);
-                    case "pdf": return new PDFtoText(_botclient, _userSession, _logger);
-                    default: return new Default();
+                case "pdf": return new PDFtoWord(_botclient, _userSession, _logger);
+                case "txt": return new TEXTtoWord(_botclient, _userSession, _logger);
+                case "docx": return new WORDtoPDF(_botclient, _userSession, _logger);
+                case "doc": return new WORDtoPDF(_botclient, _userSession, _logger);
+                default: return new Default();
                 }           
             }
-        }
+        } 
 }
