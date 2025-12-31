@@ -96,8 +96,8 @@ namespace TelegramConvertorBots.WorkTheFiles
                     if (formalower == "pdf")
                     {
                         var session = _userSession[ChatId];
-                        PDF_WordConvert convert = new PDF_WordConvert();
-                        var converteredfilePDF_WORD = await convert.PDFConvertToWord(Filepath);
+                        PDFToWord pDFToWord = new PDFToWord();
+                        var converteredfilePDF_WORD = await pDFToWord.PDFConverttoDocx(Filepath);
                         if (converteredfilePDF_WORD == "Ошибка конертации" || converteredfilePDF_WORD == "Файл слишком большой для конвертации")
                         {
                             await _botclient.SendTextMessageAsync(
@@ -149,8 +149,8 @@ namespace TelegramConvertorBots.WorkTheFiles
                     if (formalower == "txt")
                     {
                         var session = _userSession[ChatId];
-                        TXT_WordConvert convert = new TXT_WordConvert();
-                        var converteredTXT_Word = await convert.TXTConverttoWord(Filepath);
+                        TXTToWord tXTToWord = new TXTToWord();
+                        var converteredTXT_Word = await tXTToWord.DOCXConverttoPDF(Filepath);
                         if (converteredTXT_Word == "Ошибка конертации" || converteredTXT_Word == "Файл слишком большой для конвертации")
                         {
                             await _botclient.SendTextMessageAsync(
