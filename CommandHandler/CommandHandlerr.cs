@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.IO.Pipes;
 using System.Linq;
+using System.Runtime.Remoting.Messaging;
 using System.Security.Policy;
 using System.Text;
 using System.Text.RegularExpressions;
@@ -41,6 +42,7 @@ namespace TelegramConvertorBots.CommandHandler
         private readonly CurrentFormat _currentFormat;
         private readonly HandleDocument _handleDocument;
         private readonly DocumentDowloaded _documentDowloaded;
+        private readonly Telegram.Bot.Types.Message _message;
 
         public CommandHandlerr(
             //Берем классы и их настройки и присваиваем их в переменные - использование настроек с классами
@@ -64,7 +66,7 @@ namespace TelegramConvertorBots.CommandHandler
 
             _currentFormat = new CurrentFormat(botClient, _logger, _userSession);
             _handleDocument = new HandleDocument(botClient, _logger, _userSession);
-            _documentDowloaded = new DocumentDowloaded(botClient, _userSession);
+            _documentDowloaded = new DocumentDowloaded(botClient, _userSession, _logger);
         }
         public async Task HandlerMessageAsync(Telegram.Bot.Types.Message message, CancellationToken cancellationToken)
         {
@@ -94,9 +96,7 @@ namespace TelegramConvertorBots.CommandHandler
             {
                 session.state = Models.UserState.WaitingForFile;
 
-
                 string emailToUse = !string.IsNullOrEmpty(session.Email) ? session.Email : "";
-
                 ConvertStart convertStart = new ConvertStart(_botClient, _userSession, message.Document, _logger);
                 await convertStart.HadleUserInputAsync(chatId, cancellationToken);
 
@@ -146,16 +146,53 @@ namespace TelegramConvertorBots.CommandHandler
                 cancellationToken: cancellationToken);
         }
 
+        public void TryDeleteFail(string Filepath)
+        { 
+        
+        }
+
         public async Task HandleCallbackQueryAsync(CallbackQuery callbackQuery, CancellationToken cancellationToken)
         {
             var chatId = callbackQuery.Message.Chat.Id;
             var callbackData = callbackQuery.Data;
-
             switch (callbackData)
             {
                 case "/sendmail":
                     StartSendCinvertation convert = new StartSendCinvertation(_botClient);
                     await convert.StartConversionSessionAsyncc(chatId, cancellationToken);
+                    await _botClient.AnswerCallbackQueryAsync(
+                    callbackQueryId: callbackQuery.Id,
+                    cancellationToken: cancellationToken);
+                    break;
+                case "/word":
+                    string format1 = "pdf1";
+                    var session1 = _userSession[chatId];
+                    string filepath1 = session1.CurrentFilePath;
+                        SimpleFactory factory1 = new SimpleFactory(_botClient, _userSession, _logger);
+                        Formats formats1 = factory1.createProduct(format1, chatId, filepath1, cancellationToken);
+                        await formats1.CurrentFormats(format1, chatId, filepath1, cancellationToken);
+                        await _botClient.AnswerCallbackQueryAsync(
+                        callbackQueryId: callbackQuery.Id,
+                        cancellationToken: cancellationToken);
+                        break;
+                case "/txt":
+                    string format2 = "pdf2";
+                    var session2 = _userSession[chatId];
+                    string filepath2 = session2.CurrentFilePath;
+                    SimpleFactory factory2 = new SimpleFactory(_botClient, _userSession, _logger);
+                    Formats formats2 = factory2.createProduct(format2, chatId, filepath2, cancellationToken);
+                    await formats2.CurrentFormats(format2, chatId, filepath2, cancellationToken);
+                    await _botClient.AnswerCallbackQueryAsync(
+                    callbackQueryId: callbackQuery.Id,
+                    cancellationToken: cancellationToken);
+                    break;
+                case "/HTML":
+                    string format3 = "pdf3";
+                    var session3 = _userSession[chatId];
+                    string filepath3 = session3.CurrentFilePath;
+                    SimpleFactory factory3 = new SimpleFactory(_botClient, _userSession, _logger);
+                    Formats formats3 = factory3.createProduct(format3, chatId, filepath3, cancellationToken);
+                    await formats3.CurrentFormats(format3, chatId, filepath3, cancellationToken);
                     await _botClient.AnswerCallbackQueryAsync(
                     callbackQueryId: callbackQuery.Id,
                     cancellationToken: cancellationToken);
