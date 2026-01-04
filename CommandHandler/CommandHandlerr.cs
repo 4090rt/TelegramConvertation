@@ -18,6 +18,7 @@ using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 using TelegramConvertorBots.Commands;
+using TelegramConvertorBots.CompressionsImages;
 using TelegramConvertorBots.HandleDOcumentAsync;
 using TelegramConvertorBots.Models;
 using TelegramConvertorBots.WorkTheFiles;
@@ -105,6 +106,13 @@ namespace TelegramConvertorBots.CommandHandler
                 return;
             }
 
+            if (message.Photo != null)
+            {
+                session.state = Models.UserState.WaitingForFile;
+                DowloadImage dowload = new DowloadImage(_botClient, _userSession, _logger);
+                await dowload.ImageDowloadedAsync(message,cancellationToken,chatId,_logger);
+            }
+
             await _botClient.SendTextMessageAsync(
                 chatId: chatId,
                 text: "Отправьте файл или используйте команды. /help - список команд",
@@ -144,11 +152,6 @@ namespace TelegramConvertorBots.CommandHandler
                 chatId: chatId,
                 text: "📤 Отправьте файл для конвертации.\n📧 Или отправьте email (например: user@mail.com) для получения файла на почту.",
                 cancellationToken: cancellationToken);
-        }
-
-        public void TryDeleteFail(string Filepath)
-        { 
-        
         }
 
         public async Task HandleCallbackQueryAsync(CallbackQuery callbackQuery, CancellationToken cancellationToken)
@@ -194,6 +197,18 @@ namespace TelegramConvertorBots.CommandHandler
                     Formats formats3 = factory3.createProduct(format3, chatId, filepath3, cancellationToken);
                     await formats3.CurrentFormats(format3, chatId, filepath3, cancellationToken);
                     await _botClient.AnswerCallbackQueryAsync(
+                    callbackQueryId: callbackQuery.Id,
+                    cancellationToken: cancellationToken);
+                    break;
+                case "/Lite":
+                    int quality1 = 40;
+                    var session4 = _userSession[chatId];
+                    string filepath4 = session4.CurrentFilePath;
+                    СompressionImages compress = new СompressionImages();
+                    var convertpath = await compress.Compressions(filepath4, quality1);
+                    CompressionsImagesSend compresedfile = new CompressionsImagesSend(_botClient, _logger,_userSession);
+                    await compresedfile.SendImageToChatAsync(chatId, convertpath, cancellationToken);
+                   await _botClient.AnswerCallbackQueryAsync(
                     callbackQueryId: callbackQuery.Id,
                     cancellationToken: cancellationToken);
                     break;
