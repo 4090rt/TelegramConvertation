@@ -14,7 +14,7 @@ namespace TelegramConvertorBots.Commands
         private readonly ITelegramBotClient _botClient;
         public WelcomeMessage(ITelegramBotClient botClient)
         {
-            _botClient = botClient;
+           _botClient = botClient;
         }
         public async Task SendWelcomeMessageAsync(long chatId, CancellationToken cancellationToken)
         {
@@ -26,6 +26,7 @@ namespace TelegramConvertorBots.Commands
                 "/sendmail - Начать конвертацию файла\n" +
                 "/formats - Показать поддерживаемые форматы\n" +
                 "/help - Полный список команд\n" +
+                "/compression - Сжать изображение\n\n" +
                 "/cancel - Отменить текущую операцию\n\n" +
                 "📤 Просто отправьте мне файл или используйте команду /convert, также можете указать почту для отправки на нее";
 
