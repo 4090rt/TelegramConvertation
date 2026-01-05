@@ -59,10 +59,11 @@ namespace TelegramConvertorBots.WorkTheFiles
             {
                 logger?.LogWarning("Скачивание заняло слишком много времени, file_id мог истечь!");
             }
-
+            FileInfo info = new FileInfo(filename);
+            long filelenght = info.Length /1024;
             await _botclient.SendTextMessageAsync(
                     chatId: chatid,
-                    text: "✅ Файл скачен",
+                    text: $"✅ Изображение размером {filelenght}KB скачено",
                     cancellationToken: canceltoken
                 );
             Compressionretes compressionretes = new Compressionretes(_botclient);

@@ -52,7 +52,7 @@ namespace TelegramConvertorBots.CompressionsImages
                     await _botClient.SendPhotoAsync(
                     chatId: chatId,
                     photo: inputFile,
-                    caption: $"✅ Успешно! Ваш сжатый файл, теперь его размер {fileSizeKB}",
+                    caption: $"✅ Успешно! Ваш сжатый файл, теперь его размер {fileSizeKB} KB",
                     cancellationToken: cancellationToken);
                 }
             }
