@@ -201,16 +201,43 @@ namespace TelegramConvertorBots.CommandHandler
                     cancellationToken: cancellationToken);
                     break;
                 case "/Lite":
-                    int quality1 = 40;
+                    int quality1 = 90;
+                    int complevel1 = 2;
                     var session4 = _userSession[chatId];
                     string filepath4 = session4.CurrentFilePath;
                     СompressionImages compress = new СompressionImages();
-                    var convertpath = await compress.Compressions(filepath4, quality1);
+                    var convertpath = await compress.Compressions(filepath4, quality1, complevel1);
                     CompressionsImagesSend compresedfile = new CompressionsImagesSend(_botClient, _logger,_userSession);
                     await compresedfile.SendImageToChatAsync(chatId, convertpath, cancellationToken);
                    await _botClient.AnswerCallbackQueryAsync(
                     callbackQueryId: callbackQuery.Id,
                     cancellationToken: cancellationToken);
+                    break;
+                case "/Middle":
+                    int quality = 60;
+                    int complevel2 = 6;
+                    var session5 = _userSession[chatId];
+                    string filepath5 = session5.CurrentFilePath;
+                    СompressionImages compress2 = new СompressionImages();
+                    var convertpath2 = await compress2.Compressions(filepath5, quality, complevel2);
+                    CompressionsImagesSend compresedfile2 = new CompressionsImagesSend(_botClient, _logger, _userSession);
+                    await compresedfile2.SendImageToChatAsync(chatId, convertpath2, cancellationToken);
+                    await _botClient.AnswerCallbackQueryAsync(
+                   callbackQueryId: callbackQuery.Id,
+                   cancellationToken: cancellationToken);
+                    break;
+                case "/Stronger":
+                    int quality3 = 40;
+                    int complevel3 = 8;
+                    var session6 = _userSession[chatId];
+                    string filepath6 = session6.CurrentFilePath;
+                    СompressionImages compress3 = new СompressionImages();
+                    var convertpath3 = await compress3.Compressions(filepath6, quality3, complevel3);
+                    CompressionsImagesSend compresedfile3 = new CompressionsImagesSend(_botClient, _logger, _userSession);
+                    await compresedfile3.SendImageToChatAsync(chatId, convertpath3, cancellationToken);
+                    await _botClient.AnswerCallbackQueryAsync(
+                   callbackQueryId: callbackQuery.Id,
+                   cancellationToken: cancellationToken);
                     break;
             }
         }
