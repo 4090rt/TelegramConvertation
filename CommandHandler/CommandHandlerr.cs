@@ -179,7 +179,7 @@ namespace TelegramConvertorBots.CommandHandler
                         cancellationToken: cancellationToken);
                         break;
                 case "/txt":
-                    string format2 = "pdf2";
+                    string format2 = "txt";
                     var session2 = _userSession[chatId];
                     string filepath2 = session2.CurrentFilePath;
                     SimpleFactory factory2 = new SimpleFactory(_botClient, _userSession, _logger);
@@ -205,8 +205,8 @@ namespace TelegramConvertorBots.CommandHandler
                     int complevel1 = 2;
                     var session4 = _userSession[chatId];
                     string filepath4 = session4.CurrentFilePath;
-                    СompressionImages compress = new СompressionImages();
-                    var convertpath = await compress.Compressions(filepath4, quality1, complevel1);
+                    СompressionImages compress = new СompressionImages(_botClient);
+                    var convertpath = await compress.Compressions(filepath4, quality1, complevel1,cancellationToken,chatId);
                     CompressionsImagesSend compresedfile = new CompressionsImagesSend(_botClient, _logger,_userSession);
                     await compresedfile.SendImageToChatAsync(chatId, convertpath, cancellationToken);
                    await _botClient.AnswerCallbackQueryAsync(
@@ -218,8 +218,8 @@ namespace TelegramConvertorBots.CommandHandler
                     int complevel2 = 6;
                     var session5 = _userSession[chatId];
                     string filepath5 = session5.CurrentFilePath;
-                    СompressionImages compress2 = new СompressionImages();
-                    var convertpath2 = await compress2.Compressions(filepath5, quality, complevel2);
+                    СompressionImages compress2 = new СompressionImages(_botClient);
+                    var convertpath2 = await compress2.Compressions(filepath5, quality, complevel2, cancellationToken, chatId);
                     CompressionsImagesSend compresedfile2 = new CompressionsImagesSend(_botClient, _logger, _userSession);
                     await compresedfile2.SendImageToChatAsync(chatId, convertpath2, cancellationToken);
                     await _botClient.AnswerCallbackQueryAsync(
@@ -231,13 +231,25 @@ namespace TelegramConvertorBots.CommandHandler
                     int complevel3 = 8;
                     var session6 = _userSession[chatId];
                     string filepath6 = session6.CurrentFilePath;
-                    СompressionImages compress3 = new СompressionImages();
-                    var convertpath3 = await compress3.Compressions(filepath6, quality3, complevel3);
+                    СompressionImages compress3 = new СompressionImages(_botClient);
+                    var convertpath3 = await compress3.Compressions(filepath6, quality3, complevel3, cancellationToken, chatId);
                     CompressionsImagesSend compresedfile3 = new CompressionsImagesSend(_botClient, _logger, _userSession);
                     await compresedfile3.SendImageToChatAsync(chatId, convertpath3, cancellationToken);
                     await _botClient.AnswerCallbackQueryAsync(
                    callbackQueryId: callbackQuery.Id,
                    cancellationToken: cancellationToken);
+                    break;
+
+                case "/pdf":
+                    string format4 = "docx";
+                    var session7 = _userSession[chatId];
+                    string filepath7 = session7.CurrentFilePath;
+                    SimpleFactory factory4 = new SimpleFactory(_botClient, _userSession, _logger);
+                    Formats formats4 = factory4.createProduct(format4, chatId, filepath7, cancellationToken);
+                    await formats4.CurrentFormats(format4, chatId, filepath7, cancellationToken);
+                    await _botClient.AnswerCallbackQueryAsync(
+                    callbackQueryId: callbackQuery.Id,
+                    cancellationToken: cancellationToken);
                     break;
             }
         }

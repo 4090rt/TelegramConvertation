@@ -4,19 +4,17 @@ using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows.Input;
 using Telegram.Bot;
-using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 
 namespace TelegramConvertorBots.FormatsVariants
 {
-    public class ForPDF
+    public class ForTxt
     {
-        private readonly ITelegramBotClient _botClient;
-        public ForPDF(ITelegramBotClient botClient)
+        private readonly ITelegramBotClient _botclient;
+        public ForTxt(ITelegramBotClient botClient)
         {
-            _botClient = botClient;
+            _botclient = botClient;
         }
 
         public async Task ButtonsPdf(long chatId, CancellationToken cancellationToken)
@@ -27,13 +25,11 @@ namespace TelegramConvertorBots.FormatsVariants
             {
         new[]
         {
-            InlineKeyboardButton.WithCallbackData("Word", "/word"),
-            InlineKeyboardButton.WithCallbackData("txt", "/txt"),
-            InlineKeyboardButton.WithCallbackData("HTML", "/HTML")
+            InlineKeyboardButton.WithCallbackData("Word", "/txt"),
         }
     });
 
-            await _botClient.SendTextMessageAsync(
+            await _botclient.SendTextMessageAsync(
                 chatId: chatId,
                 text: text,
                 replyMarkup: keyboard,

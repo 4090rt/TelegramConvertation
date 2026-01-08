@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using TelegramConvertorBots.FormatsVariants;
 using TelegramConvertorBots.Models;
 
 namespace TelegramConvertorBots.WorkTheFiles
@@ -36,8 +37,8 @@ namespace TelegramConvertorBots.WorkTheFiles
 
                     _logger.LogInformation($"Получен файл:{filename} Размер: {filesize} Тип: {type}");
 
-                    DocumentDowloaded documentDowloaded = new DocumentDowloaded(_botclient, _userSession);
-                    await documentDowloaded.DocumentDowloadedAsync(format, documant, cancellationToken, chatId, _logger);
+                    DocumentDowloaded doc = new DocumentDowloaded(_botclient,_userSession, _logger);
+                    await doc.DocumentDowloadedAsync(format, documant,cancellationToken,chatId,_logger);
                 }
                 catch (Exception ex)
                 {

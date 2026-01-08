@@ -13,7 +13,7 @@ namespace TelegramConvertorBots.HandleDOcumentAsync
         {
             try
             {
-                string pdffile = Path.ChangeExtension(filepath, ".pdf");
+                string pdffile = Path.ChangeExtension(filepath, ".doc");
 
                 using (Spire.Doc.Document document = new Spire.Doc.Document())
                 {

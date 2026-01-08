@@ -8,6 +8,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using TelegramConvertorBots.FormatsVariants;
 using TelegramConvertorBots.Models;
 
 namespace TelegramConvertorBots.WorkTheFiles
@@ -35,13 +36,13 @@ namespace TelegramConvertorBots.WorkTheFiles
                 string format = Path.GetExtension(filename).Trim('.') ?? "";
                 format = format.ToLower();
 
-                var supportsformat = new[] { "docx", "txt", "pdf", "html" };
+                var supportsformat = new[] { "docx", "txt", "pdf", "html", "doc" };
                 if (!supportsformat.Contains(format))
                 {
                     await _botClient.SendTextMessageAsync(
                        chatId: chatId,
                        text: $"❌ Формат '{format}' не поддерживается.\n\n" +
-                            "Доступные форматы: docx, pdf, jpg, png, txt\n\n" +
+                            "Доступные форматы: doc, docx, pdf, jpg, png, txt\n\n" +
                             "Введите формат еще раз:",
                        cancellationToken: cancellationToken);
                     return;
@@ -59,7 +60,7 @@ namespace TelegramConvertorBots.WorkTheFiles
                 HandleDocument documents = new HandleDocument(_botClient, _logger, _userSession);
                 await documents.HandleDocumentAsyncmethod(document, _message, format, chatId, cancellationToken);
                 _logger.LogInformation($"передан документ {filename}");
-                session.state = UserState.Idle;
+
             }
         }
     }

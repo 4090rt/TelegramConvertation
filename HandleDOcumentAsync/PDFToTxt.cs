@@ -1,4 +1,6 @@
-﻿using System;
+﻿using Aspose.Pdf.Text;
+using Spire.Pdf;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -33,10 +35,13 @@ namespace TelegramConvertorBots.HandleDOcumentAsync
                 { 
                     document.LoadFromFile(filepath);
 
-                    await Task.Run(() => document.SaveToFile(txtpath));
+                    await Task.Run(() => document.SaveToFile(txtpath, (Spire.Pdf.FileFormat)5));
 
-                    return txtpath;
                 }
+                string content = File.ReadAllText(txtpath, Encoding.GetEncoding(1251));
+                File.WriteAllText(txtpath, content, Encoding.UTF8);
+
+                return txtpath;
             }
             catch (Exception ex)
             {

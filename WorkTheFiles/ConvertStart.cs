@@ -40,6 +40,7 @@ namespace TelegramConvertorBots.WorkTheFiles
             switch (session.state)
             {
                 case UserState.WaitingForFile:
+                    _userSession[chatId].CurrentFormat = null;
                     CurrentFormat currentFormat = new CurrentFormat(_botClient, _logger, _userSession);
                     await currentFormat.ProcessFormatSelectionAsync(chatId, cancellationToken,session, _document);
                     break;

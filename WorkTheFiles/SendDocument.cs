@@ -20,7 +20,6 @@ namespace TelegramConvertorBots.WorkTheFiles
     {
         private readonly ITelegramBotClient _botClient;
         private readonly Dictionary<long, Models.UserSession> _userSession;
-
         private readonly Microsoft.Extensions.Logging.ILogger _logger;
 
         public SendDocument(ITelegramBotClient botClient, Microsoft.Extensions.Logging.ILogger logger, Dictionary<long, Models.UserSession> userSession)

@@ -64,6 +64,10 @@ namespace TelegramConvertorBots.Commands
                     SendMail send = new SendMail(_botClient);
                     await send.SendMails(chatId, cancellationToken);
                     break;
+                case "/compression":
+                    Startofcompression start = new Startofcompression(_botClient);
+                    await start.SendStartofcompression(chatId, cancellationToken);
+                    break;
 
                 default:
                     await _botClient.SendTextMessageAsync(

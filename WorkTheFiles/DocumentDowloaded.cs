@@ -9,6 +9,8 @@ using System.Threading;
 using System.Threading.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Types;
+using TelegramConvertorBots.CommandHandler;
+using TelegramConvertorBots.FormatsVariants;
 using TelegramConvertorBots.HandleDOcumentAsync;
 using TelegramConvertorBots.Models;
 
@@ -19,6 +21,7 @@ namespace TelegramConvertorBots.WorkTheFiles
         private readonly ITelegramBotClient _botclient;
         private readonly Dictionary<long, Models.UserSession> _userSession;
         public readonly Microsoft.Extensions.Logging.ILogger _logger;
+        private readonly CommandHandler.CommandHandlerr _commandHandlerr;
         public DocumentDowloaded(ITelegramBotClient botClient, Dictionary<long, Models.UserSession> userSession, Microsoft.Extensions.Logging.ILogger logger)
         { 
             _botclient = botClient;
@@ -33,12 +36,6 @@ namespace TelegramConvertorBots.WorkTheFiles
             var filename = documents.FileName ?? "Без названия"; ;
             var filesize = documents.FileSize / 1024.0 / 1024.0;
             var session = _userSession[chatid];
-
-            await _botclient.SendTextMessageAsync(
-                chatId: chatid,
-                text: "⏳ Скачиваю файл...",
-                cancellationToken: canceltoken
-            );
 
             string exePath = AppDomain.CurrentDomain.BaseDirectory;
             var downloadPath = Path.Combine(exePath, "Downloads");
@@ -62,34 +59,32 @@ namespace TelegramConvertorBots.WorkTheFiles
                 logger?.LogWarning("Скачивание заняло слишком много времени, file_id мог истечь!");
             }
 
-            await _botclient.SendTextMessageAsync(
-                     chatId: chatid,
-                     text: "⏳ Файл скачен, ожидаю конвертации",
-                     cancellationToken: canceltoken
-                 );
+            session.CurrentFilePath = filePath;
 
-            SimpleFactory factory = new SimpleFactory(_botclient, _userSession, _logger);
-            Formats formats = factory.createProduct(format,chatid,filePath,canceltoken);
-            await formats.CurrentFormats(format, chatid, filePath, canceltoken);
-
-                TryDeleteFile(filePath);
-            
-        }
-        public void TryDeleteFile(string filePath)
-        {
-            // Несколько попыток удаления с задержкой
-            for (int i = 0; i < 3; i++)
+            if (format == "pdf")
             {
-                try
-                {
-                    System.IO.File.Delete(filePath);
-                    break; // Успешно
-                }
-                catch (IOException) when (i < 2)
-                {
-                    Thread.Sleep(100 * (i + 1)); // Ждем и пробуем снова
-                }
+                ForPDF forPDF = new ForPDF(_botclient);
+                await forPDF.ButtonsPdf(chatid, canceltoken);
+            }
+            if (format == "docx" || format == "doc")
+            { 
+                ForWord forWord = new ForWord(_botclient);
+                await forWord.ButtonsWord(chatid, canceltoken);
+            }
+            if (format == "txt")
+            { 
+                ForTxt forTxt = new ForTxt(_botclient);
+                await forTxt.ButtonsPdf(chatid, canceltoken);
+            }
+            else
+            {
+                await _botclient.SendTextMessageAsync(
+             chatId: chatid,
+             text: "Функция пока недоступна",
+             cancellationToken: canceltoken
+         );
             }
         }
+  
     }
 }

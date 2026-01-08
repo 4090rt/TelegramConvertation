@@ -2,6 +2,7 @@
 using NLog;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -19,7 +20,145 @@ namespace TelegramConvertorBots.WorkTheFiles
              Task CurrentFormats(string formalower, long ChatId, string Filepath, CancellationToken cancellation);        
         }
 
-        public class WORDtoPDF : Formats
+    public class PDFtoHTML : Formats
+    {
+        public readonly ITelegramBotClient _botclient;
+        public readonly Dictionary<long, Models.UserSession> _userSession;
+        public readonly Microsoft.Extensions.Logging.ILogger _logger;
+
+        public PDFtoHTML(ITelegramBotClient botClient,
+               Dictionary<long, Models.UserSession> userSession,
+                Microsoft.Extensions.Logging.ILogger logger)
+        {
+            _botclient = botClient;
+            _userSession = userSession;
+            _logger = logger;
+        }
+        public async Task CurrentFormats(string formalower, long ChatId, string Filepath, CancellationToken cancellation)
+        {
+            try
+            {
+                if (formalower == "pdf3")
+                {
+                    var session = _userSession[ChatId];
+                    PDFTOHTML pDFToHTML = new PDFTOHTML();
+                    var converteredfilePDF_HTML = await pDFToHTML.PDFConverttoHTML(Filepath);
+                    if (converteredfilePDF_HTML == "Ошибка конертации" || converteredfilePDF_HTML == "Файл слишком большой для конвертации")
+                    {
+                        await _botclient.SendTextMessageAsync(
+                            chatId: ChatId,
+                            text: $"❌ {converteredfilePDF_HTML}",
+                            cancellationToken: cancellation
+                        );
+                        return;
+                    }
+                    if (session.Email != null)
+                    {
+                        SendEmail.Send senn = new SendEmail.Send();
+                        await senn.SmptServerSend(session.Email, converteredfilePDF_HTML);
+                    }
+                    await Task.Delay(300);
+
+                    SendDocument senddocumentpdf_word = new SendDocument(_botclient, _logger, _userSession);
+                    await senddocumentpdf_word.SendDocumentToChatAsync(ChatId, converteredfilePDF_HTML, cancellation);
+
+                    DocumentDowloaded doc = new DocumentDowloaded(_botclient, _userSession, _logger);
+                    TryDeleteFile(converteredfilePDF_HTML);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Не удалось получить конвертировать из pdf в txt" + ex.Message);
+            }
+        }
+        public void TryDeleteFile(string filePath)
+        {
+            // Несколько попыток удаления с задержкой
+            for (int i = 0; i < 3; i++)
+            {
+                try
+                {
+                    System.IO.File.Delete(filePath);
+                    break; // Успешно
+                }
+                catch (IOException) when (i < 2)
+                {
+                    Thread.Sleep(100 * (i + 1)); // Ждем и пробуем снова
+                }
+            }
+        }
+    }
+
+    public class PDFtoTXT : Formats
+    {
+        public readonly ITelegramBotClient _botclient;
+        public readonly Dictionary<long, Models.UserSession> _userSession;
+        public readonly Microsoft.Extensions.Logging.ILogger _logger;
+
+        public PDFtoTXT(ITelegramBotClient botClient,
+               Dictionary<long, Models.UserSession> userSession,
+                Microsoft.Extensions.Logging.ILogger logger)
+        {
+            _botclient = botClient;
+            _userSession = userSession;
+            _logger = logger;
+        }
+        public async Task CurrentFormats(string formalower, long ChatId, string Filepath, CancellationToken cancellation)
+        {
+            try
+            {
+                if (formalower == "pdf2")
+                {
+                    var session = _userSession[ChatId];
+                    PDFToTxt pDFTotxt = new PDFToTxt();
+                    var converteredfilePDF_TXT = await pDFTotxt.PDFConverttoTXT(Filepath);
+                    if (converteredfilePDF_TXT == "Ошибка конертации" || converteredfilePDF_TXT == "Файл слишком большой для конвертации")
+                    {
+                        await _botclient.SendTextMessageAsync(
+                            chatId: ChatId,
+                            text: $"❌ {converteredfilePDF_TXT}",
+                            cancellationToken: cancellation
+                        );
+                        return;
+                    }
+                    if (session.Email != null)
+                    {
+                        SendEmail.Send senn = new SendEmail.Send();
+                        await senn.SmptServerSend(session.Email, converteredfilePDF_TXT);
+                    }
+                    await Task.Delay(300);
+
+                    SendDocument senddocumentpdf_word = new SendDocument(_botclient, _logger, _userSession);
+                    await senddocumentpdf_word.SendDocumentToChatAsync(ChatId, converteredfilePDF_TXT, cancellation);
+
+                    DocumentDowloaded doc = new DocumentDowloaded(_botclient, _userSession, _logger);
+                    TryDeleteFile(converteredfilePDF_TXT);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError("Не удалось получить конвертировать из pdf в txt" + ex.Message);
+            }
+        }
+        public void TryDeleteFile(string filePath)
+        {
+            // Несколько попыток удаления с задержкой
+            for (int i = 0; i < 3; i++)
+            {
+                try
+                {
+                    System.IO.File.Delete(filePath);
+                    break; // Успешно
+                }
+                catch (IOException) when (i < 2)
+                {
+                    Thread.Sleep(100 * (i + 1)); // Ждем и пробуем снова
+                }
+            }
+        }
+    }
+
+    public class WORDtoPDF : Formats
         {
             public readonly ITelegramBotClient _botclient;
             public readonly Dictionary<long, Models.UserSession> _userSession;
@@ -63,7 +202,7 @@ namespace TelegramConvertorBots.WorkTheFiles
                         await senddocumentpdf_word.SendDocumentToChatAsync(ChatId, converteredfileword_pdf, cancellation);
 
                         DocumentDowloaded doc = new DocumentDowloaded(_botclient, _userSession, _logger);
-                        doc.TryDeleteFile(converteredfileword_pdf);
+                        TryDeleteFile(converteredfileword_pdf);
 
                     }
                 }
@@ -72,7 +211,24 @@ namespace TelegramConvertorBots.WorkTheFiles
                     _logger.LogError("Не удалось получить конвертировать из pdf в word" + ex.Message);
                 }
             }
+
+        public void TryDeleteFile(string filePath)
+        {
+            // Несколько попыток удаления с задержкой
+            for (int i = 0; i < 3; i++)
+            {
+                try
+                {
+                    System.IO.File.Delete(filePath);
+                    break; // Успешно
+                }
+                catch (IOException) when (i < 2)
+                {
+                    Thread.Sleep(100 * (i + 1)); // Ждем и пробуем снова
+                }
+            }
         }
+    }
 
 
         public class PDFtoWord : Formats
@@ -93,7 +249,7 @@ namespace TelegramConvertorBots.WorkTheFiles
             {
                 try
                 {
-                    if (formalower == "pdf")
+                    if (formalower == "pdf1")
                     {
                         var session = _userSession[ChatId];
                         PDFToWord pDFToWord = new PDFToWord();
@@ -118,8 +274,7 @@ namespace TelegramConvertorBots.WorkTheFiles
                         await senddocumentpdf_word.SendDocumentToChatAsync(ChatId, converteredfilePDF_WORD, cancellation);
 
                         DocumentDowloaded doc = new DocumentDowloaded(_botclient, _userSession, _logger);
-                        doc.TryDeleteFile(converteredfilePDF_WORD);
-
+                        TryDeleteFile(converteredfilePDF_WORD);
                     }
                 }
                 catch (Exception ex)
@@ -127,7 +282,25 @@ namespace TelegramConvertorBots.WorkTheFiles
                     _logger.LogError("Не удалось получить конвертировать из pdf в word" + ex.Message);
                 }
             }
+        public void TryDeleteFile(string filePath)
+        {
+            // Несколько попыток удаления с задержкой
+            for (int i = 0; i < 3; i++)
+            {
+                try
+                {
+                    System.IO.File.Delete(filePath);
+                    break; // Успешно
+                }
+                catch (IOException) when (i < 2)
+                {
+                    Thread.Sleep(100 * (i + 1)); // Ждем и пробуем снова
+                }
+            }
         }
+    }
+
+
 
         public class TEXTtoWord : Formats
         {
@@ -171,7 +344,7 @@ namespace TelegramConvertorBots.WorkTheFiles
                         await senddocumenttxt_word.SendDocumentToChatAsync(ChatId, converteredTXT_Word, cancellation);
 
                         DocumentDowloaded doc = new DocumentDowloaded(_botclient, _userSession, _logger);                      
-                        doc.TryDeleteFile(converteredTXT_Word);
+                        TryDeleteFile(converteredTXT_Word);
                     }
                 }
                 catch (Exception ex)
@@ -179,7 +352,24 @@ namespace TelegramConvertorBots.WorkTheFiles
                     _logger.LogError("Не удалось получить конвертировать из pdf в word" + ex.Message);
                 }
             }
+        public void TryDeleteFile(string filePath)
+        {
+            // Несколько попыток удаления с задержкой
+            for (int i = 0; i < 3; i++)
+            {
+                try
+                {
+                    System.IO.File.Delete(filePath);
+                    break; // Успешно
+                }
+                catch (IOException) when (i < 2)
+                {
+                    Thread.Sleep(100 * (i + 1)); // Ждем и пробуем снова
+                }
+            }
         }
+    }
+
 
 
         public class Default: Formats
@@ -210,7 +400,9 @@ namespace TelegramConvertorBots.WorkTheFiles
             {
                 switch (formalower.ToLower())
                 {
-                case "pdf": return new PDFtoWord(_botclient, _userSession, _logger);
+                case "pdf1": return new PDFtoWord(_botclient, _userSession, _logger);
+                case "pdf2": return new PDFtoTXT(_botclient, _userSession, _logger);
+                case "pdf3": return new PDFtoHTML(_botclient, _userSession, _logger);
                 case "txt": return new TEXTtoWord(_botclient, _userSession, _logger);
                 case "docx": return new WORDtoPDF(_botclient, _userSession, _logger);
                 case "doc": return new WORDtoPDF(_botclient, _userSession, _logger);

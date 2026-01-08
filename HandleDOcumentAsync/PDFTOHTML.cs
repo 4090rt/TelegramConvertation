@@ -32,8 +32,8 @@ namespace TelegramConvertorBots.HandleDOcumentAsync
                 using (Spire.Pdf.PdfDocument document = new Spire.Pdf.PdfDocument())
                 {
                     document.LoadFromFile(filepath);
-
-                    await Task.Run(() => document.SaveToFile(HTMLpath));
+                    
+                    await Task.Run(() => document.SaveToFile(HTMLpath, Spire.Pdf.FileFormat.HTML));
 
                     return HTMLpath;
                 }
