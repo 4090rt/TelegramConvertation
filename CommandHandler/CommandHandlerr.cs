@@ -18,8 +18,10 @@ using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using Telegram.Bot.Types.ReplyMarkups;
 using TelegramConvertorBots.Commands;
+using TelegramConvertorBots.CompressionRatios;
 using TelegramConvertorBots.CompressionsImages;
 using TelegramConvertorBots.HandleDOcumentAsync;
+using TelegramConvertorBots.ImageEnchaner;
 using TelegramConvertorBots.Models;
 using TelegramConvertorBots.WorkTheFiles;
 
@@ -103,7 +105,7 @@ namespace TelegramConvertorBots.CommandHandler
 
 
                 session.Email = null;
-                return;
+                return; 
             }
 
             if (message.Photo != null)
@@ -167,6 +169,7 @@ namespace TelegramConvertorBots.CommandHandler
                     callbackQueryId: callbackQuery.Id,
                     cancellationToken: cancellationToken);
                     break;
+
                 case "/word":
                     string format1 = "pdf1";
                     var session1 = _userSession[chatId];
@@ -178,17 +181,7 @@ namespace TelegramConvertorBots.CommandHandler
                         callbackQueryId: callbackQuery.Id,
                         cancellationToken: cancellationToken);
                         break;
-                case "/txt":
-                    string format2 = "txt";
-                    var session2 = _userSession[chatId];
-                    string filepath2 = session2.CurrentFilePath;
-                    SimpleFactory factory2 = new SimpleFactory(_botClient, _userSession, _logger);
-                    Formats formats2 = factory2.createProduct(format2, chatId, filepath2, cancellationToken);
-                    await formats2.CurrentFormats(format2, chatId, filepath2, cancellationToken);
-                    await _botClient.AnswerCallbackQueryAsync(
-                    callbackQueryId: callbackQuery.Id,
-                    cancellationToken: cancellationToken);
-                    break;
+
                 case "/HTML":
                     string format3 = "pdf3";
                     var session3 = _userSession[chatId];
@@ -200,19 +193,48 @@ namespace TelegramConvertorBots.CommandHandler
                     callbackQueryId: callbackQuery.Id,
                     cancellationToken: cancellationToken);
                     break;
+
+                case "/pdf":
+                    string format4 = "docx";
+                    var session7 = _userSession[chatId];
+                    string filepath7 = session7.CurrentFilePath;
+                    SimpleFactory factory4 = new SimpleFactory(_botClient, _userSession, _logger);
+                    Formats formats4 = factory4.createProduct(format4, chatId, filepath7, cancellationToken);
+                    await formats4.CurrentFormats(format4, chatId, filepath7, cancellationToken);
+                    await _botClient.AnswerCallbackQueryAsync(
+                    callbackQueryId: callbackQuery.Id,
+                    cancellationToken: cancellationToken);
+                    break;
+                case "/Compression":
+                  Compressionretes compressionretes = new Compressionretes(_botClient);
+                    await compressionretes.ButtonsImage(chatId,cancellationToken);
+                  await _botClient.AnswerCallbackQueryAsync(
+                      callbackQueryId: callbackQuery.Id,
+                      cancellationToken: cancellationToken);
+                    break;
+
+                case "/Enchanner":
+                    ButtonEnchanmest buttonEnchanmest = new ButtonEnchanmest(_botClient);
+                       await buttonEnchanmest.ImageButtonsvariants(chatId,cancellationToken);
+                    await _botClient.AnswerCallbackQueryAsync(
+                        callbackQueryId: callbackQuery.Id,
+                        cancellationToken: cancellationToken);
+                    break;
+
                 case "/Lite":
                     int quality1 = 90;
                     int complevel1 = 2;
                     var session4 = _userSession[chatId];
                     string filepath4 = session4.CurrentFilePath;
                     СompressionImages compress = new СompressionImages(_botClient);
-                    var convertpath = await compress.Compressions(filepath4, quality1, complevel1,cancellationToken,chatId);
-                    CompressionsImagesSend compresedfile = new CompressionsImagesSend(_botClient, _logger,_userSession);
+                    var convertpath = await compress.Compressions(filepath4, quality1, complevel1, cancellationToken, chatId);
+                    CompressionsImagesSend compresedfile = new CompressionsImagesSend(_botClient, _logger, _userSession);
                     await compresedfile.SendImageToChatAsync(chatId, convertpath, cancellationToken);
-                   await _botClient.AnswerCallbackQueryAsync(
-                    callbackQueryId: callbackQuery.Id,
-                    cancellationToken: cancellationToken);
+                    await _botClient.AnswerCallbackQueryAsync(
+                     callbackQueryId: callbackQuery.Id,
+                     cancellationToken: cancellationToken);
                     break;
+
                 case "/Middle":
                     int quality = 60;
                     int complevel2 = 6;
@@ -226,6 +248,7 @@ namespace TelegramConvertorBots.CommandHandler
                    callbackQueryId: callbackQuery.Id,
                    cancellationToken: cancellationToken);
                     break;
+
                 case "/Stronger":
                     int quality3 = 40;
                     int complevel3 = 8;
@@ -234,19 +257,43 @@ namespace TelegramConvertorBots.CommandHandler
                     СompressionImages compress3 = new СompressionImages(_botClient);
                     var convertpath3 = await compress3.Compressions(filepath6, quality3, complevel3, cancellationToken, chatId);
                     CompressionsImagesSend compresedfile3 = new CompressionsImagesSend(_botClient, _logger, _userSession);
-                    await compresedfile3.SendImageToChatAsync(chatId, convertpath3, cancellationToken);
+                    await compresedfile3.SendImageToChatAsync(chatId, convertpath3,cancellationToken);
                     await _botClient.AnswerCallbackQueryAsync(
                    callbackQueryId: callbackQuery.Id,
                    cancellationToken: cancellationToken);
                     break;
 
-                case "/pdf":
-                    string format4 = "docx";
-                    var session7 = _userSession[chatId];
-                    string filepath7 = session7.CurrentFilePath;
-                    SimpleFactory factory4 = new SimpleFactory(_botClient, _userSession, _logger);
-                    Formats formats4 = factory4.createProduct(format4, chatId, filepath7, cancellationToken);
-                    await formats4.CurrentFormats(format4, chatId, filepath7, cancellationToken);
+                case "/Low":
+                    var session8 = _userSession[chatId];
+                    string filepath8 = session8.CurrentFilePath;
+                    EnchannerImage image1 = new EnchannerImage(_botClient, _logger);
+                    var convertpath4 = await image1.Enchanners(filepath8, EnhancementLevel.Low, cancellationToken,chatId);
+                    EnchannerSend send1 = new EnchannerSend(_botClient, _logger, _userSession);
+                    await send1.SendImageToChatAsync(chatId, convertpath4,cancellationToken);
+                    await _botClient.AnswerCallbackQueryAsync(
+                    callbackQueryId: callbackQuery.Id,
+                    cancellationToken: cancellationToken);
+                    break;
+
+                case "/Medium":
+                    var session9 = _userSession[chatId];
+                    string filepath9 = session9.CurrentFilePath;
+                    EnchannerImage image2 = new EnchannerImage(_botClient, _logger);
+                    var convertpath5 = await image2.Enchanners(filepath9, EnhancementLevel.Medium, cancellationToken, chatId);
+                    EnchannerSend send = new EnchannerSend(_botClient, _logger, _userSession);
+                    await send.SendImageToChatAsync(chatId, convertpath5, cancellationToken);
+                    await _botClient.AnswerCallbackQueryAsync(
+                    callbackQueryId: callbackQuery.Id,
+                    cancellationToken: cancellationToken);
+                    break;
+
+                case "/High":
+                    var session10 = _userSession[chatId];
+                    string filepath10 = session10.CurrentFilePath;
+                    EnchannerImage image3 = new EnchannerImage(_botClient, _logger);
+                    var convertpath6 = await image3.Enchanners(filepath10, EnhancementLevel.High, cancellationToken, chatId);
+                    EnchannerSend send3 = new EnchannerSend(_botClient, _logger, _userSession);
+                    await send3.SendImageToChatAsync(chatId, convertpath6, cancellationToken);
                     await _botClient.AnswerCallbackQueryAsync(
                     callbackQueryId: callbackQuery.Id,
                     cancellationToken: cancellationToken);
