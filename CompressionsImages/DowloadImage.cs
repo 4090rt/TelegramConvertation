@@ -9,6 +9,7 @@ using System.Threading.Tasks;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using TelegramConvertorBots.CompressionRatios;
+using TelegramConvertorBots.ImageEnchaner;
 
 namespace TelegramConvertorBots.WorkTheFiles
 {
@@ -27,11 +28,6 @@ namespace TelegramConvertorBots.WorkTheFiles
 
         public async Task ImageDowloadedAsync(Message message, CancellationToken canceltoken, long chatid, ILogger logger)
         {
-                        await _botclient.SendTextMessageAsync(
-                chatId: chatid,
-                text: "⏳ Начинаю скачивание...",
-                cancellationToken: canceltoken
-            );
 
             var startTime = DateTime.Now;
             var session = _userSession[chatid];
@@ -66,10 +62,11 @@ namespace TelegramConvertorBots.WorkTheFiles
                     text: $"✅ Изображение размером {filelenght}KB скачено",
                     cancellationToken: canceltoken
                 );
-            Compressionretes compressionretes = new Compressionretes(_botclient);
-            await compressionretes.ButtonsImage(chatid,canceltoken);
 
             session.CurrentFilePath = filename;
+
+            ImageEnchanerButton button = new ImageEnchanerButton(_botclient);
+            await button.ImageButtonsvariants(chatid, canceltoken);
         }
     }
 }

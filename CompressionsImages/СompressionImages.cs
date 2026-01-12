@@ -8,14 +8,22 @@ using System.Drawing;
 using System.IO;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
-  
+using Telegram.Bot;
+
 
 namespace TelegramConvertorBots
 {
     public class СompressionImages
     {
-        public async Task<string> Compressions(string filepath, int quality, int comressionlevel)
+        public readonly ITelegramBotClient _botclient;
+
+        public СompressionImages(ITelegramBotClient botClient)
+        { 
+            _botclient = botClient;
+        }
+        public async Task<string> Compressions(string filepath, int quality, int comressionlevel, CancellationToken canceltoken, long chatid)
         {
             try
             {
@@ -30,6 +38,7 @@ namespace TelegramConvertorBots
                 );
 
                 FileInfo fileInfo = new FileInfo(filepath);
+                var namefile = fileInfo.Name;
                 var info = Path.GetExtension(filepath);
                 long fileSizeKB = fileInfo.Length / 1024;
                 if (!File.Exists(filepath))
@@ -37,8 +46,14 @@ namespace TelegramConvertorBots
                     Console.WriteLine($"❌ Файл не найден: {filepath}");
                     return "Файл не найден";
                 }
-
-
+                await _botclient.SendTextMessageAsync(
+                    chatId: chatid,
+                    text: $"⏳ Начинаю  сжатие файла {namefile}, формата {info}...\n" +
+                    "\n" +
+                    "\n" +
+                    "Это может занять некоторое время",
+                    cancellationToken: canceltoken
+                    );
                 switch (info)
                 {
 
