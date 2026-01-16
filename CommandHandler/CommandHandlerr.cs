@@ -22,6 +22,7 @@ using TelegramConvertorBots.CompressionRatios;
 using TelegramConvertorBots.CompressionsImages;
 using TelegramConvertorBots.HandleDOcumentAsync;
 using TelegramConvertorBots.ImageEnchaner;
+using TelegramConvertorBots.ImageUP;
 using TelegramConvertorBots.Models;
 using TelegramConvertorBots.WorkTheFiles;
 
@@ -264,36 +265,45 @@ namespace TelegramConvertorBots.CommandHandler
                     break;
 
                 case "/Low":
+                    double parametr1 = 1.7;
                     var session8 = _userSession[chatId];
                     string filepath8 = session8.CurrentFilePath;
                     EnchannerImage image1 = new EnchannerImage(_botClient, _logger);
-                    var convertpath4 = await image1.Enchanners(filepath8, EnhancementLevel.Low, cancellationToken,chatId);
+                    var convertpath4 = await image1.Enchanners(filepath8, EnhancementLevel.Low, cancellationToken,chatId); 
+                    UPImage uPImage1 = new UPImage(_botClient, _logger);
+                    var controlpath1 = await uPImage1.ImagesUPMin(convertpath4, parametr1);
                     EnchannerSend send1 = new EnchannerSend(_botClient, _logger, _userSession);
-                    await send1.SendImageToChatAsync(chatId, convertpath4,cancellationToken);
+                    await send1.SendImageToChatAsync(chatId, controlpath1,cancellationToken);
                     await _botClient.AnswerCallbackQueryAsync(
                     callbackQueryId: callbackQuery.Id,
                     cancellationToken: cancellationToken);
                     break;
 
                 case "/Medium":
+                    double parametr2 = 1.9;
                     var session9 = _userSession[chatId];
                     string filepath9 = session9.CurrentFilePath;
                     EnchannerImage image2 = new EnchannerImage(_botClient, _logger);
                     var convertpath5 = await image2.Enchanners(filepath9, EnhancementLevel.Medium, cancellationToken, chatId);
+                    UPImage uPImage = new UPImage(_botClient, _logger);
+                    var controlpath2 = await uPImage.ImagesUPMiddle(convertpath5, parametr2);
                     EnchannerSend send = new EnchannerSend(_botClient, _logger, _userSession);
-                    await send.SendImageToChatAsync(chatId, convertpath5, cancellationToken);
+                    await send.SendImageToChatAsync(chatId, controlpath2, cancellationToken);
                     await _botClient.AnswerCallbackQueryAsync(
                     callbackQueryId: callbackQuery.Id,
                     cancellationToken: cancellationToken);
                     break;
 
                 case "/High":
+                    double parametr3 = 2.5;
                     var session10 = _userSession[chatId];
                     string filepath10 = session10.CurrentFilePath;
                     EnchannerImage image3 = new EnchannerImage(_botClient, _logger);
                     var convertpath6 = await image3.Enchanners(filepath10, EnhancementLevel.High, cancellationToken, chatId);
+                    UPImage uPImage3 = new UPImage(_botClient, _logger);
+                    var controlpath3 = await uPImage3.ImagesUPMiddle(convertpath6, parametr3);
                     EnchannerSend send3 = new EnchannerSend(_botClient, _logger, _userSession);
-                    await send3.SendImageToChatAsync(chatId, convertpath6, cancellationToken);
+                    await send3.SendImageToChatAsync(chatId, controlpath3, cancellationToken);
                     await _botClient.AnswerCallbackQueryAsync(
                     callbackQueryId: callbackQuery.Id,
                     cancellationToken: cancellationToken);
