@@ -266,14 +266,20 @@ namespace TelegramConvertorBots.CommandHandler
 
                 case "/Low":
                     double parametr1 = 1.7;
+                    double strenght1 = 0.5;
+                    int levelsh1 = 3;
                     var session8 = _userSession[chatId];
                     string filepath8 = session8.CurrentFilePath;
                     EnchannerImage image1 = new EnchannerImage(_botClient, _logger);
                     var convertpath4 = await image1.Enchanners(filepath8, EnhancementLevel.Low, cancellationToken,chatId); 
                     UPImage uPImage1 = new UPImage(_botClient, _logger);
                     var controlpath1 = await uPImage1.ImagesUPMin(convertpath4, parametr1);
+                    UpImage2Rez upImage2Rezq1 = new UpImage2Rez(_botClient, _logger);
+                    var controlpath1_1 = await upImage2Rezq1.ImagesUPMin(controlpath1, strenght1);
+                    UpImageSHUM upImageSHUM1 = new UpImageSHUM(_botClient, _logger);
+                    var controlpath2_1 = await upImageSHUM1.ImagesUPMin(controlpath1_1, levelsh1);
                     EnchannerSend send1 = new EnchannerSend(_botClient, _logger, _userSession);
-                    await send1.SendImageToChatAsync(chatId, controlpath1,cancellationToken);
+                    await send1.SendImageToChatAsync(chatId, controlpath2_1,cancellationToken);
                     await _botClient.AnswerCallbackQueryAsync(
                     callbackQueryId: callbackQuery.Id,
                     cancellationToken: cancellationToken);
@@ -281,14 +287,20 @@ namespace TelegramConvertorBots.CommandHandler
 
                 case "/Medium":
                     double parametr2 = 1.9;
+                    double strenght2 = 1.0;
+                    int levelsh2 = 3;
                     var session9 = _userSession[chatId];
                     string filepath9 = session9.CurrentFilePath;
                     EnchannerImage image2 = new EnchannerImage(_botClient, _logger);
                     var convertpath5 = await image2.Enchanners(filepath9, EnhancementLevel.Medium, cancellationToken, chatId);
                     UPImage uPImage = new UPImage(_botClient, _logger);
                     var controlpath2 = await uPImage.ImagesUPMiddle(convertpath5, parametr2);
+                    UpImage2Rez upImage2Rezw2 = new UpImage2Rez(_botClient, _logger);
+                    var controlpath1_2 = await upImage2Rezw2.ImagesUPMin(controlpath2, strenght2);
+                    UpImageSHUM upImageSHUM2 = new UpImageSHUM(_botClient, _logger);
+                    var controlpath2_2 = await upImageSHUM2.ImagesUPMin(controlpath1_2, levelsh2);
                     EnchannerSend send = new EnchannerSend(_botClient, _logger, _userSession);
-                    await send.SendImageToChatAsync(chatId, controlpath2, cancellationToken);
+                    await send.SendImageToChatAsync(chatId, controlpath2_2, cancellationToken);
                     await _botClient.AnswerCallbackQueryAsync(
                     callbackQueryId: callbackQuery.Id,
                     cancellationToken: cancellationToken);
@@ -296,14 +308,20 @@ namespace TelegramConvertorBots.CommandHandler
 
                 case "/High":
                     double parametr3 = 2.5;
+                    double strenght3 = 1.5;
+                    int levelsh3 = 3;
                     var session10 = _userSession[chatId];
                     string filepath10 = session10.CurrentFilePath;
                     EnchannerImage image3 = new EnchannerImage(_botClient, _logger);
                     var convertpath6 = await image3.Enchanners(filepath10, EnhancementLevel.High, cancellationToken, chatId);
                     UPImage uPImage3 = new UPImage(_botClient, _logger);
                     var controlpath3 = await uPImage3.ImagesUPMiddle(convertpath6, parametr3);
+                    UpImage2Rez upImage2Rezw3 = new UpImage2Rez(_botClient, _logger);
+                    var controlpath1_3 = await upImage2Rezw3.ImagesUPMin(controlpath3, strenght3);
+                    UpImageSHUM upImageSHUM3 = new UpImageSHUM(_botClient, _logger);
+                    var controlpath3_3 = await upImageSHUM3.ImagesUPMin(controlpath1_3, levelsh3);
                     EnchannerSend send3 = new EnchannerSend(_botClient, _logger, _userSession);
-                    await send3.SendImageToChatAsync(chatId, controlpath3, cancellationToken);
+                    await send3.SendImageToChatAsync(chatId, controlpath3_3, cancellationToken);
                     await _botClient.AnswerCallbackQueryAsync(
                     callbackQueryId: callbackQuery.Id,
                     cancellationToken: cancellationToken);
