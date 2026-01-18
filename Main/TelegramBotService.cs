@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Hosting;
+﻿using HarfBuzzSharp;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using System;
@@ -12,8 +13,8 @@ using Telegram.Bot.Exceptions;
 using Telegram.Bot.Extensions.Polling;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
-using Telegram.Bot.Types.Enums; 
-
+using Telegram.Bot.Types.Enums;
+using TelegramConvertorBots.CompressionsImages;
 
 namespace TelegramConvertorBots.Main
 {
@@ -30,7 +31,6 @@ namespace TelegramConvertorBots.Main
             _config = config.Value;
             _logger = logger;
             _commandHandlerr = commandHandler;
-
             _botClient = new TelegramBotClient(_config.BotToken);
 
             _logger.LogInformation("TelegramBotService создан");
@@ -91,6 +91,19 @@ namespace TelegramConvertorBots.Main
                         break;
                     // если тип CallbackQuery сообщение то вызываем метод обработки CallbackQuery сообщений
                     case UpdateType.CallbackQuery:
+                        // 1. Отвечаем на callback (чтоб убрать часики на кнопке)
+                        await _botClient.AnswerCallbackQueryAsync(
+                            callbackQueryId: update.CallbackQuery.Id,
+                            cancellationToken: cancellationToken
+                        );
+
+                        // 2. Отправляем сообщение в чат
+                        var progressMsg = await _botClient.SendTextMessageAsync(
+                            chatId: update.CallbackQuery.Message.Chat.Id,
+                            text: "⏳ Обрабатываю ваш запрос...",
+                            cancellationToken: cancellationToken
+                        );
+
                         await _commandHandlerr.HandleCallbackQueryAsync(update.CallbackQuery, cancellationToken);
                         break;
 
