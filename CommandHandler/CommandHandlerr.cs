@@ -20,6 +20,7 @@ using Telegram.Bot.Types.ReplyMarkups;
 using TelegramConvertorBots.Commands;
 using TelegramConvertorBots.CompressionRatios;
 using TelegramConvertorBots.CompressionsImages;
+using TelegramConvertorBots.Filters;
 using TelegramConvertorBots.HandleDOcumentAsync;
 using TelegramConvertorBots.ImageEnchaner;
 using TelegramConvertorBots.ImageUP;
@@ -326,6 +327,39 @@ namespace TelegramConvertorBots.CommandHandler
                     callbackQueryId: callbackQuery.Id,
                     cancellationToken: cancellationToken);
                     break;
+
+                case "/Filters":
+                    FilterButton but = new FilterButton(_botClient);
+                    await but.FilterButtons(chatId, cancellationToken);
+                    await _botClient.AnswerCallbackQueryAsync(
+                    callbackQueryId: callbackQuery.Id,
+                    cancellationToken: cancellationToken);
+                    break;
+
+                case "/pencil":
+                    var session11 = _userSession[chatId];
+                    string filepath11 = session11.CurrentFilePath;
+                    Filterpenc pencil = new Filterpenc(_botClient, _logger);
+                    var resultpenc = await pencil.PencFilter(filepath11);
+                    EnchannerSend send4 = new EnchannerSend(_botClient, _logger, _userSession);
+                    await send4.SendImageToChatAsync(chatId, resultpenc, cancellationToken);
+                    await _botClient.AnswerCallbackQueryAsync(
+                    callbackQueryId: callbackQuery.Id,
+                    cancellationToken: cancellationToken);
+                    break;
+
+                case "/multi":
+                    var session12 = _userSession[chatId];
+                    string filepath12 = session12.CurrentFilePath;
+                    Filtermult multi = new Filtermult(_botClient, _logger);
+                    var resultmult = await multi.MultFilter(filepath12);
+                    EnchannerSend send5 = new EnchannerSend(_botClient, _logger, _userSession);
+                    await send5.SendImageToChatAsync(chatId, resultmult, cancellationToken);
+                    await _botClient.AnswerCallbackQueryAsync(
+                    callbackQueryId: callbackQuery.Id,
+                    cancellationToken: cancellationToken);
+                    break;
+
             }
         }
     }
