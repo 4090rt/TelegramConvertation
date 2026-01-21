@@ -359,7 +359,28 @@ namespace TelegramConvertorBots.CommandHandler
                     callbackQueryId: callbackQuery.Id,
                     cancellationToken: cancellationToken);
                     break;
-
+                case "/aquarel":
+                    var session13 = _userSession[chatId];
+                    string filepath13 = session13.CurrentFilePath;
+                    FilterFqua aqua = new FilterFqua(_botClient, _logger);
+                    var resultaqua = await aqua.FquaFilter(filepath13);
+                    EnchannerSend send6 = new EnchannerSend(_botClient, _logger, _userSession);
+                    await send6.SendImageToChatAsync(chatId, resultaqua, cancellationToken);
+                    await _botClient.AnswerCallbackQueryAsync(
+                    callbackQueryId: callbackQuery.Id,
+                    cancellationToken: cancellationToken);
+                    break;
+                case "/Oil":
+                    var session14 = _userSession[chatId];
+                    string filepath14 = session14.CurrentFilePath;
+                    FilterOil oil = new FilterOil(_botClient, _logger);
+                    var resultoil= await oil.OilFilter(filepath14);
+                    EnchannerSend send7 = new EnchannerSend(_botClient, _logger, _userSession);
+                    await send7.SendImageToChatAsync(chatId, resultoil, cancellationToken);
+                    await _botClient.AnswerCallbackQueryAsync(
+                    callbackQueryId: callbackQuery.Id,
+                    cancellationToken: cancellationToken);
+                    break;
             }
         }
     }

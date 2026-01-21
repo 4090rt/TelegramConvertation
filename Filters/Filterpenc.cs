@@ -47,8 +47,8 @@ namespace TelegramConvertorBots.Filters
                     Mat colormat = new Mat();
                     string outpath = GetOutputPath(filepath);
 
-                    Cv2.PencilSketch(src, mat, colormat, 60, 0.1f);
-                    Cv2.ImWrite(outpath, colormat);
+                    Cv2.PencilSketch(src, mat, colormat, 30, 0.9f);
+                    Cv2.ImWrite(outpath, mat);
 
                     _logger.LogInformation("Фильтр успешно применен");
                     return outpath;

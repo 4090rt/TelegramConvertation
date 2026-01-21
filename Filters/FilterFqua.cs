@@ -1,25 +1,27 @@
 ﻿using Microsoft.Extensions.Logging;
 using OpenCvSharp;
-using OpenCvSharp.CPlusPlus;
+using OpenCvSharp.XPhoto;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
 using Telegram.Bot;
 
 namespace TelegramConvertorBots.Filters
 {
-    public class Filtermult
+    public class FilterFqua
     {
-        private readonly ITelegramBotClient _botclient;
-        private readonly Microsoft.Extensions.Logging.ILogger _logger;
+        private readonly ITelegramBotClient _botClient;
+        private readonly ILogger _logger;
 
-        public Filtermult(ITelegramBotClient botClient, Microsoft.Extensions.Logging.ILogger logger)
-        { 
-            _botclient = botClient;
+        public FilterFqua(ITelegramBotClient botClient, ILogger logger)
+        {
+            _botClient = botClient;
             _logger = logger;
         }
+
         private string GetOutputPath(string inputPath)
         {
             string name = System.IO.Path.GetFileNameWithoutExtension(inputPath);
@@ -31,13 +33,12 @@ namespace TelegramConvertorBots.Filters
             );
         }
 
-        public async Task<string> MultFilter(string filepath)
+        public async Task<string> FquaFilter(string filepath)
         {
             try
             {
-                _logger.LogInformation("Начался процесс применения фильтра");
-
-                using (OpenCvSharp.Mat src = Cv2.ImRead(filepath))
+                _logger.LogInformation("Начался процесс применения филтра");
+                using (Mat src = Cv2.ImRead(filepath))
                 {
                     if (src.Empty())
                     {
@@ -45,26 +46,22 @@ namespace TelegramConvertorBots.Filters
                         return null;
                     }
 
-                    OpenCvSharp.Mat mat = new OpenCvSharp.Mat();
+                    Mat mat = new Mat();
                     string outpath = GetOutputPath(filepath);
 
-                    Cv2.Stylization(src, mat, 5, 0.90f);
+                    Cv2.Stylization(
+                           src: src,
+                           dst: mat,
+                           85,    // Среднее размытие
+                           0.75f  // Сохраняем больше деталей
+                       );
 
-                    // Усиливаем цвета
-                    OpenCvSharp.Mat hsv = new OpenCvSharp.Mat();
-                    Cv2.CvtColor(mat, hsv, ColorConversionCodes.BGR2HSV);
-                    OpenCvSharp.Mat[] channels = hsv.Split();
-
-                    channels[1] = channels[1] * 1.7; // +60% насыщенность
-                    channels[2] = channels[2] * 1.2; // +20% яркость
-
-                    Cv2.Merge(channels, hsv);
-                    Cv2.CvtColor(hsv, mat, ColorConversionCodes.HSV2BGR);
-                    Cv2.ImWrite(outpath, mat);
+                    Cv2.ImWrite(outpath,mat);
 
                     _logger.LogInformation("Фильтр успешно применен");
                     return outpath;
-               }
+
+                }
             }
             catch (Exception ex)
             {

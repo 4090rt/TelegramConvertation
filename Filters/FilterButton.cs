@@ -29,7 +29,8 @@ namespace TelegramConvertorBots.Filters
                 {
                     InlineKeyboardButton.WithCallbackData("Карандашный набросок", "/pencil"),
                     InlineKeyboardButton.WithCallbackData("Мультяшный", "/multi"),
-                    InlineKeyboardButton.WithCallbackData("Акварель", "/aquarel")
+                    InlineKeyboardButton.WithCallbackData("Акварель", "/aquarel"),
+                    InlineKeyboardButton.WithCallbackData("Маслянная живопись", "/Oil")
                 }
             });
 
