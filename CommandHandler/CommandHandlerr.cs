@@ -20,6 +20,7 @@ using Telegram.Bot.Types.ReplyMarkups;
 using TelegramConvertorBots.Commands;
 using TelegramConvertorBots.CompressionRatios;
 using TelegramConvertorBots.CompressionsImages;
+using TelegramConvertorBots.DataBase;
 using TelegramConvertorBots.Filters;
 using TelegramConvertorBots.HandleDOcumentAsync;
 using TelegramConvertorBots.ImageEnchaner;
@@ -78,6 +79,14 @@ namespace TelegramConvertorBots.CommandHandler
             var chatId = message.Chat.Id;
             var userId = message.From?.Id ?? 0;
             var username = message.From?.Username ?? "Anonymous";
+            var datetime = DateTime.UtcNow; 
+
+            string info = $"Сообщение от @{username} (ID: {userId}) в чате {chatId}";
+            SaveUsersClass save = new SaveUsersClass(_logger);
+            await save.UserAdd(info);
+
+            SaveLastCommand savelast = new SaveLastCommand(_logger);
+            await savelast.AddLastCommand(username, datetime);
 
             _logger.LogInformation($"Сообщение от @{username} (ID: {userId}) в чате {chatId}");
 
