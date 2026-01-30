@@ -68,6 +68,15 @@ namespace TelegramConvertorBots.Commands
                     Startofcompression start = new Startofcompression(_botClient);
                     await start.SendStartofcompression(chatId, cancellationToken);
                     break;
+                case "/all":
+                    SelectAllUsersCommand commandall = new SelectAllUsersCommand(_logger);
+                    await commandall.AllUsers();
+                    break;
+                case "/search":
+                    string username = "@lilchicfgt";
+                    SearchUserCommand search = new SearchUserCommand(_logger);
+                    await search.SeachingUser(username);
+                    break;
 
                 default:
                     await _botClient.SendTextMessageAsync(
