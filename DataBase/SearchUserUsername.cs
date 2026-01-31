@@ -9,6 +9,12 @@ using Telegram.Bot.Types;
 
 namespace TelegramConvertorBots.DataBase
 {
+    public class QueryNolock
+    {
+        public bool UseNoLock { get; set; } = true;
+        public bool LogDetails { get; set; } = true;
+    }
+
     public  class SearchUserUsername
     {
         private readonly Microsoft.Extensions.Logging.ILogger _logger;
@@ -16,38 +22,64 @@ namespace TelegramConvertorBots.DataBase
         public SearchUserUsername(Microsoft.Extensions.Logging.ILogger logger)
         { 
             _logger = logger;
+            Task.Run(async () => await Inichializate()).ConfigureAwait(false);
         }
 
         public async Task Inichializate()
         {
             if (_isInitialized) return;
-            await CreateIndex();
-            await IndexProverka();
+
+            bool ises = await IndexProverka();
+
+            if (!ises)
+            {
+                await CreateIndex();
+                await IndexProverka();
+            }
+
+            _isInitialized = true;
         }
-        public async Task SearchUser(string username)
+        public async Task SearchUser(string username, QueryNolock options = null)
         {
+            if (options == null)
+            {
+               options =  new QueryNolock();
+            }
             PoolSqlConnection pool = new PoolSqlConnection();
             SqlConnection connect = new SqlConnection();
             try
             {
                 connect = pool.PoolOpen();
-                Task.Run(async () => await Inichializate()).Wait();
-                string command = "SELECT UserName, DateLasdCommand FROM LastCommandUser WHERE UserName = @U";
+
+                if (options.LogDetails == true)
+                {
+                    _logger.LogInformation(
+                      $"🔧 Query options: UseNoLock={options.UseNoLock}, User={username}");
+                }
+
+                string nolockclass = options.UseNoLock ?"WITH(NOLOCK)" : "";
+                string command = $"SELECT UserName, DateLasdCommand FROM LastCommandUser {nolockclass} WHERE UserName = @U";
+
+                var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
                 using (var sqlcommand = new SqlCommand(command, connect))
                 { 
                     sqlcommand.Parameters.AddWithValue("@U", username);
                     using (var result = await sqlcommand.ExecuteReaderAsync())
                     {
+                        int rowcount = 0;
                         while (await result.ReadAsync())
                         { 
                             string usernames = result.GetString(0);
                             DateTime date = result.GetDateTime(1);
+                            rowcount++;
 
                             _logger.LogInformation($"{username} + {date}");
                         }
+                        _logger.LogInformation($"Поиск пользователя '{username}': найдено {rowcount} записей за {stopwatch.ElapsedMilliseconds}мс");
                     }
                 }
+                stopwatch.Stop();
             }
             catch (Exception ex)
             {
@@ -55,6 +87,7 @@ namespace TelegramConvertorBots.DataBase
             }
             finally
             {
+                if(connect != null)
                 pool.PoolClose(connect);
             }
         }
@@ -67,8 +100,9 @@ namespace TelegramConvertorBots.DataBase
             {
                 connect = pool.PoolOpen();
                 string command = @"
-                    IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_LastCommandUser_Username' AND object_id = OBJECT_ID('LastCommandUser'))
-                        CREATE INDEX IX_LastCommandUser_Username ON LastCommandUser(Username)";
+                    IF NOT EXISTS (SELECT 1 FROM sys.indexes WHERE name = 'IX_LastCommandUser_UserName' AND object_id = OBJECT_ID('LastCommandUser'))
+                        CREATE INDEX IX_LastCommandUser_UserName ON LastCommandUser(UserName)
+                        INCLUDE (DateLasdCommand)";
 
                 using (var sqlcommand = new SqlCommand(command, connect))
                 { 
@@ -82,40 +116,49 @@ namespace TelegramConvertorBots.DataBase
             }
             finally
             {
+                if (connect != null)
                 pool.PoolClose(connect);
             }
         }
 
-        private async Task IndexProverka()
+        private async Task<bool> IndexProverka()
         {
             PoolSqlConnection pool = new PoolSqlConnection();
             SqlConnection connect = new SqlConnection();
             try
             {
                 connect = pool.PoolOpen();
-                string command = "SELECT 1 FROM sys.indexes WHERE name = 'IX_LastCommandUser_Username' AND object_id = OBJECT_ID('LastCommandUser')";
+                string command = "SELECT 1 FROM sys.indexes WHERE name = 'IX_LastCommandUser_UserName' AND object_id = OBJECT_ID('LastCommandUser')";
 
                 using (var sqlcommand = new SqlCommand(command, connect))
                 { 
-                   var result = await sqlcommand.ExecuteScalarAsync().ConfigureAwait(false) as string;
+                   var result = await sqlcommand.ExecuteScalarAsync().ConfigureAwait(false);
+                    if (result != null && result != DBNull.Value)
+                    {
+                        bool exists = Convert.ToInt32(result) == 1;
 
-                    if (!string.IsNullOrEmpty(result))
-                    {
-                        _logger.LogInformation($"✅ Индекс '{result}' существует!");
+                        if (exists)
+                        {
+                            _logger.LogInformation($"✅ Индекс '{result}' существует!");
+                        }
+                        else
+                        {
+                            _logger.LogInformation($"❌ Индекс 'IX_COM_User' не найден");
+                        }
+                        return exists;
                     }
-                    else
-                    {
-                        _logger.LogInformation($"❌ Индекс 'IX_COM_User' не найден");
-                    }
+                    return false;
                 }
             }
             catch (Exception ex)
             {
                 _logger.LogError("Возникло исключение " + ex.Message + ex.StackTrace);
+                return false;
             }
             finally
             {
-                pool.PoolClose(connect);
+                if (connect != null)
+                    pool.PoolClose(connect);
             }
         }
     }
