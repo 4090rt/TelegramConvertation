@@ -2,9 +2,11 @@
 using Microsoft.Extensions.Options;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.IO;
 using System.IO.Pipes;
 using System.Linq;
+using System.Net.Http;
 using System.Runtime.Remoting.Messaging;
 using System.Security.Policy;
 using System.Text;
@@ -23,6 +25,7 @@ using TelegramConvertorBots.CompressionsImages;
 using TelegramConvertorBots.DataBase;
 using TelegramConvertorBots.Filters;
 using TelegramConvertorBots.HandleDOcumentAsync;
+using TelegramConvertorBots.HttpBlock;
 using TelegramConvertorBots.ImageEnchaner;
 using TelegramConvertorBots.ImageUP;
 using TelegramConvertorBots.Models;
@@ -49,30 +52,42 @@ namespace TelegramConvertorBots.CommandHandler
         private readonly HandleDocument _handleDocument;
         private readonly DocumentDowloaded _documentDowloaded;
         private readonly Telegram.Bot.Types.Message _message;
-
+        private readonly Microsoft.Extensions.Caching.Memory.IMemoryCache _memoryCache;
+        private readonly IHttpClientFactory _httpClientFactory;
+        private readonly Microsoft.Extensions.Logging.ILogger<ParsedClass> _loggerparsed;
+        private readonly Microsoft.Extensions.Logging.ILogger<InfoBotCachingRequests> _loggerinfo;
         public CommandHandlerr(
             //Берем классы и их настройки и присваиваем их в переменные - использование настроек с классами
             ITelegramBotClient botClient,
             IOptions<Models.BotConfig> config,
-            ILogger<CommandHandlerr> logger)
+            ILogger<CommandHandlerr> logger,
+            Microsoft.Extensions.Caching.Memory.IMemoryCache memoryCache,
+            IHttpClientFactory httpClientFactory,
+            Microsoft.Extensions.Logging.ILogger<ParsedClass> loggerparsed,
+            Microsoft.Extensions.Logging.ILogger<InfoBotCachingRequests> loggerinfo
+            )
         {
             //присваиваем значения к глобальным переменным
             _botClient = botClient;
             _userSession = new Dictionary<long, Models.UserSession>();
+            _loggerparsed = loggerparsed;
+            _loggerinfo = loggerinfo;
             _logger = logger;
             _botConfig = config.Value;
-
+            _httpClientFactory = httpClientFactory;
             _welcomeMessage = new WelcomeMessage(botClient);
             _helpMessage = new HelpMessage(botClient);
             _formatslist = new FormatsList(botClient);
             _startConversionSession = new StartConversionSession(botClient);
             _botStatus = new BotStatus(_botConfig,botClient);
             _cancelCurrentOperation = new CancelCurrentOperation(botClient);
-            _mainComands = new MainComands(botClient, _botConfig, _logger);
+            _mainComands = new MainComands(_botClient,_botConfig,_logger,_memoryCache,_httpClientFactory,_loggerparsed,_loggerinfo);
 
             _currentFormat = new CurrentFormat(botClient, _logger, _userSession);
             _handleDocument = new HandleDocument(botClient, _logger, _userSession);
             _documentDowloaded = new DocumentDowloaded(botClient, _userSession, _logger);
+            _memoryCache =  memoryCache;
+
         }
         public async Task HandlerMessageAsync(Telegram.Bot.Types.Message message, CancellationToken cancellationToken)
         {
@@ -141,7 +156,7 @@ namespace TelegramConvertorBots.CommandHandler
 
             if (text.StartsWith("/"))
             {
-                MainComands mainmethid = new MainComands(_botClient, _botConfig, _logger);
+                MainComands mainmethid = new MainComands(_botClient, _botConfig, _logger, _memoryCache, _httpClientFactory, _loggerparsed, _loggerinfo);
                 await mainmethid.HandleComandAsync(chatId, text.ToLower(), cancellationToken);
                 return;
             }
