@@ -1,11 +1,16 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Telegram.Bot;
+using TelegramConvertorBots.DataBase;
+using TelegramConvertorBots.HttpBlock;
 using TelegramConvertorBots.Models;
 
 namespace TelegramConvertorBots.Commands
@@ -16,13 +21,22 @@ namespace TelegramConvertorBots.Commands
         private readonly Models.BotConfig _botConfig;
         private readonly Dictionary<long, Models.UserSession> _userSession;
         private readonly Microsoft.Extensions.Logging.ILogger _logger;
+        private readonly Microsoft.Extensions.Caching.Memory.IMemoryCache _memoryCache;
+        private readonly Microsoft.Extensions.Logging.ILogger<InfoBotCachingRequests> _loggerinfo;
+        private readonly Microsoft.Extensions.Logging.ILogger<ParsedClass> _loggerPars;
+        private readonly IHttpClientFactory _httpClientFactory;
 
-        public MainComands(ITelegramBotClient botClient, Models.BotConfig botConfig, Microsoft.Extensions.Logging.ILogger logger)
+        public MainComands(ITelegramBotClient botClient, Models.BotConfig botConfig, Microsoft.Extensions.Logging.ILogger logger, Microsoft.Extensions.Caching.Memory.IMemoryCache memoryCache,
+            IHttpClientFactory httpClientFactory, Microsoft.Extensions.Logging.ILogger<ParsedClass> loggerPars, Microsoft.Extensions.Logging.ILogger<InfoBotCachingRequests> loggerinfo)
         {
             _botClient = botClient;
             _botConfig = botConfig;
             _userSession = new Dictionary<long, Models.UserSession>();
             _logger = logger;
+            _memoryCache = memoryCache;
+            _httpClientFactory = httpClientFactory;
+            _loggerPars = loggerPars;
+            _loggerinfo = loggerinfo;
         }
 
         public async Task HandleComandAsync(long chatId, string command, CancellationToken cancellationToken)
@@ -72,10 +86,31 @@ namespace TelegramConvertorBots.Commands
                     SelectAllUsersCommand commandall = new SelectAllUsersCommand(_logger);
                     await commandall.AllUsers();
                     break;
-                case "/search":
-                    string username = "@lilchicfgt";
-                    SearchUserCommand search = new SearchUserCommand(_logger);
-                    await search.SeachingUser(username);
+                case "/bot":
+                    string url = "https://ipinfo.io/json";
+                    InfoBotCachingRequests request = new InfoBotCachingRequests(_loggerinfo, _loggerPars, _httpClientFactory, _memoryCache);
+                    var result = await request.CachingRrquest(url,cancellationToken);
+
+                    await _botClient.SendTextMessageAsync (
+                        chatId: chatId,
+                        text: $"🏠 Мой Сервер находится здесь:\n  {result.timezone}  {result.country} \n  {result.region} \n  {result.city},\n 🇷🇺 Я РУССКИЙ, ОТЕЧЕСТВЕННЫЙ БОТ.\n⚒️ Я работаю на процессоре INTEL XEON E5 2680,\n 🚚Привезенным и купленым в дружественном государстве ",
+                        cancellationToken: cancellationToken
+                        );
+                    break;
+                //case "/search":
+                //    string username = "lilchicfgt";
+                //    SearchUserCommand search = new SearchUserCommand(_logger);
+                //    await search.SeachingUser(username);
+                //    break;
+                case "/DateNow":
+                    DateTime date = DateTime.Now;
+                    var optionss = new NoLockOptions
+                    {
+                        NolockUsing = true,
+                        Logging = true
+                    };
+                    DateTimeNowCommands commandnew = new DateTimeNowCommands(_memoryCache, _logger);
+                    await commandnew.Cache(date, 10 ,1, optionss);
                     break;
 
                 default:
