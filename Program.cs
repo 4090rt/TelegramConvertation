@@ -1,16 +1,20 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using DocumentFormat.OpenXml.Office2016.Drawing.ChartDrawing;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Polly;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net.Http;
 using System.Runtime.Remoting.Contexts;
 using System.Text;
 using System.Threading.Tasks;
 using Telegram.Bot;
+using TelegramConvertorBots.DataBase;
 using TelegramConvertorBots.Logs;
 using TelegramConvertorBots.Main;
 using TelegramConvertorBots.Models;
@@ -27,9 +31,75 @@ namespace TelegramConvertorBots
 
             try
             {
-                var host = CreateHostBuilder(args).Build();
+                var hostBuilder = CreateHostBuilder(args);
+
+                // ДОПОЛНИТЕЛЬНО настраиваем сервисы
+                hostBuilder.ConfigureServices((context, services) =>
+                {
+                    services.AddLogging(configure =>
+                    {
+                        configure.ClearProviders();
+                        configure.AddConsole();
+                        configure.AddDebug();
+                        configure.SetMinimumLevel(LogLevel.Information);
+                    });
+                    // Добавляем кэш
+                    services.AddMemoryCache();
+
+                    // Регистрируем FromDate
+                    services.AddSingleton<FromDate>();
+                    services.AddSingleton<SearchUserUsername>();
+
+                    services.AddMemoryCache();
+
+                    services.AddHttpClient("TelegramClient", client1 =>
+                    {
+                        client1.Timeout = TimeSpan.FromSeconds(60);
+                        client1.DefaultRequestHeaders.Accept.ParseAdd("application/json");
+                        client1.DefaultRequestHeaders.AcceptLanguage.ParseAdd("ru-RU,ru;q=0.9,en-US;q=0.8,en;q=0.7");
+                        client1.DefaultRequestHeaders.AcceptEncoding.ParseAdd("gzip, deflate, br");
+                        client1.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36");
+                    })
+                   .AddTransientHttpErrorPolicy(policy => // Circuit Breaker
+                       policy.CircuitBreakerAsync(
+                           handledEventsAllowedBeforeBreaking: 5,
+                           durationOfBreak: TimeSpan.FromSeconds(30)))
+                   .AddTransientHttpErrorPolicy(pollu => // Retry
+                       pollu.WaitAndRetryAsync(3, retry =>
+                           TimeSpan.FromSeconds(Math.Pow(2, retry))))
+                   .ConfigurePrimaryHttpMessageHandler(() => new HttpClientHandler // Auto Parsing
+                   {
+                       AutomaticDecompression = System.Net.DecompressionMethods.GZip |
+                               System.Net.DecompressionMethods.Deflate
+                   });
+                });
+
+                var host = hostBuilder.Build();
+
+
                 Console.WriteLine("✅ Конфигурация загружена");
                 Console.WriteLine("✅ Сервисы зарегистрированы");
+
+
+                // Тестируем сервис ДО запуска хоста
+                using (var scope = host.Services.CreateScope())
+                {
+                    var fromDateService = scope.ServiceProvider.GetRequiredService<FromDate>();
+                    var options = new NoLockOptions
+                    {
+                        NolockUsing = true,
+                        Logging = true
+                    };
+
+                    var data = await fromDateService.CacheReq(
+                        DateTime.UtcNow,
+                        options,
+                        page: 1,
+                        pagesize: 10);
+
+                    Console.WriteLine($"✅ Тест сервиса: получено {data.Count} записей");
+                }
+
                 Console.WriteLine("✅ Запускаем хост...");
                 await host.RunAsync();
             }
@@ -41,7 +111,6 @@ namespace TelegramConvertorBots
                 Console.ReadKey();
             }
         }
-
         static IHostBuilder CreateHostBuilder(string[] args) => Host.CreateDefaultBuilder(args).
             ConfigureAppConfiguration((context, config) => // Создаем хост с аргументами командной строки
             {
@@ -49,7 +118,6 @@ namespace TelegramConvertorBots
                 //config.SetBasePath(Directory.GetCurrentDirectory());// базовая папка
                 //config.AddJsonFile("jsconfig1.json", optional: false, reloadOnChange: true);// берем файл json если нет falseoptional: false
                 //reloadOnChange: если измнаенился во время работы - перезапускаем конфигурацию
-
                 // добавление переменных окружения
                 config.AddEnvironmentVariables();
 
